@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <title>UDRU Robot Kiosk</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --udru-blue: #004a99;
+            --udru-gold: #ffcc00;
+        }
+
+        * { 
+            box-sizing: border-box; 
+            -webkit-tap-highlight-color: transparent; 
+        }
+
+        body, html {
+            height: 100%;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            font-family: 'Kanit', sans-serif;
+            background: #0f2027;
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            color: white;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* ปุ่ม Fullscreen ขวาบน */
+        .fullscreen-btn {
+            position: fixed;
+            top: 25px;
+            right: 25px;
+            z-index: 100;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 15px;
+            border-radius: 15px;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            transition: 0.3s;
+        }
+
+        .fullscreen-btn svg {
+            width: 30px;
+            height: 30px;
+            fill: white;
+        }
+
+        /* เนื้อหาหลัก */
+        .main-card {
+            z-index: 1;
+            text-align: center;
+            width: 85%;
+            max-width: 900px;
+            padding: 50px 40px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50px;
+            box-shadow: 0 40px 100px rgba(0,0,0,0.5);
+        }
+
+        /* ส่วนแสดงรูปภาพสาขา */
+        .dept-image-container {
+            width: 100%;
+            max-width: 350px; /* ปรับขนาดความกว้างรูป */
+            margin: 0 auto 30px auto;
+        }
+
+        .dept-image {
+            width: 100%;
+            height: auto;
+            border-radius: 25px; /* มุมโค้งมน */
+            border: 4px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            object-fit: cover;
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            margin: 0;
+            font-weight: 600;
+            text-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            color: var(--udru-gold);
+            font-weight: 300;
+            margin-top: 15px;
+            margin-bottom: 50px;
+            line-height: 1.4;
+        }
+
+        .start-btn {
+            background: linear-gradient(45deg, #00c853, #b2ff59);
+            color: #004d40;
+            border: none;
+            padding: 25px 80px;
+            font-size: 2.2rem;
+            font-weight: 600;
+            border-radius: 100px;
+            cursor: pointer;
+            box-shadow: 0 15px 40px rgba(0, 200, 83, 0.4);
+            transition: all 0.3s ease;
+        }
+
+        .start-btn:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body>
+
+    <button class="fullscreen-btn" onclick="toggleFullscreen()">
+        <svg viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+    </button>
+
+    <div class="main-card">
+        <div class="dept-image-container">
+            <img src="https://scontent.fkkc2-1.fna.fbcdn.net/v/t39.30808-6/305398865_477896117680555_3204918105931786621_n.jpg?_nc_cat=105&ccb=1-7&_nc_sid=6ee11a&_nc_eui2=AeFPSrVnGHXML6Zf1vStlZSrny8fktKfjlmfLx-S0p-OWRqz4BvmW41zabnewFThacNJTxVKc_PQHRQzof_UTrRX&_nc_ohc=Vxc5eT2f9kcQ7kNvwFu2MXd&_nc_oc=AdmpAkgL7vNV73xbFxWcxMFG7PDIYxYw517zx-qL_-_Gfr_pcwangIwV354ZK6o9U2o&_nc_zt=23&_nc_ht=scontent.fkkc2-1.fna&_nc_gid=Sr5lsB7Cw5MyrphgzNXTkw&oh=00_AfmMmwSeTbZ6bwpJ0Wkvr2JfBWyyb2VXwUGqbeNmUhi92A&oe=694D8420" alt="Department Image" class="dept-image">
+        </div>
+        
+        <h1>ยินดีต้อนรับ</h1>
+        <h2>สาขาวิชาวิศวกรรมคอมพิวเตอร์และการสื่อสาร<br>มหาวิทยาลัยราชภัฏอุดรธานี</h2>
+
+        <button class="start-btn" onclick="goToRooms()">เลือกห้องเรียน</button>
+    </div>
+
+    <script>
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        function goToRooms() {
+            window.location.href = "/room"; 
+        }
+
+        document.addEventListener('touchmove', function (e) {
+            if (e.scale !== 1) e.preventDefault();
+        }, { passive: false });
+    </script>
+
+</body>
+</html>
