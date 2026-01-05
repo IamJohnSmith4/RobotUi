@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UDRU CCE - กำลังนำทาง</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root { --udru-blue: #004a99; --udru-gold: #ffcc00; --cce-cyan: #00e5ff; }
+        
+        body {
+            margin: 0; padding: 0; font-family: 'Kanit', sans-serif;
+            background: radial-gradient(circle, #0a192f 0%, #050c1a 100%);
+            color: white; height: 100vh; display: flex; flex-direction: column; align-items: center;
+        }
+
+        .nav-header {
+            text-align: center; margin-top: 30px;
+        }
+
+        .target-room {
+            font-size: 2.5rem; color: var(--udru-gold); margin: 0;
+            text-shadow: 0 0 15px rgba(255, 204, 0, 0.5);
+        }
+
+        /* พื้นที่แสดงวิดีโอ / แผนที่ */
+        .display-container {
+            width: 85%; max-width: 1000px; aspect-ratio: 16 / 9;
+            background: #000; border: 3px solid var(--cce-cyan);
+            border-radius: 30px; margin: 30px 0; overflow: hidden;
+            box-shadow: 0 0 40px rgba(0, 229, 255, 0.2);
+            position: relative;
+        }
+
+        video { width: 100%; height: 100%; object-fit: cover; }
+
+        .status-bar {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px 40px; border-radius: 50px;
+            display: flex; align-items: center; gap: 20px;
+            backdrop-filter: blur(10px); border: 1px solid rgba(0, 229, 255, 0.3);
+        }
+
+        /* จุดกะพริบสถานะ */
+        .dot {
+            width: 12px; height: 12px; background: #00ff00;
+            border-radius: 50%; box-shadow: 0 0 10px #00ff00;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+
+        .cancel-btn {
+            margin-top: 30px; padding: 12px 40px;
+            background: rgba(255, 82, 82, 0.2); border: 2px solid #ff5252;
+            color: #ff8a80; border-radius: 50px; cursor: pointer;
+            font-family: 'Kanit'; font-size: 1.2rem; transition: 0.3s;
+        }
+        .cancel-btn:active { background: #ff5252; color: white; }
+    </style>
+</head>
+<body>
+
+    <div class="nav-header">
+        <p style="margin:0; opacity: 0.7;">หุ่นยนต์ CCE กำลังนำทางไปที่</p>
+        <h1 class="target-room">ห้อง {{ room_id }}</h1>
+    </div>
+
+    <div class="display-container">
+        <video id="nav-video" autoplay loop muted>
+            <source src="/static/video/navigation_bg.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+
+        </div>
+
+    <div class="status-bar">
+        <div class="dot"></div>
+        <span id="move-status">หุ่นยนต์กำลังเคลื่อนที่อย่างระมัดระวัง...</span>
+    </div>
+
+    <button class="cancel-btn" onclick="cancelNavigation()">ยกเลิกการนำทาง</button>
+
+    <script>
+        function cancelNavigation() {
+            if(confirm("คุณต้องการยกเลิกการนำทางใช่หรือไม่?")) {
+                // [COMMENT] ส่งคำสั่งหยุดหุ่นยนต์ไปที่ ROS
+                // fetch('/api/cancel_move') 
+                window.location.href = '/room';
+            }
+        }
+
+        // [COMMENT] โค้ดเช็คสถานะจาก ROS ว่าถึงหรือยัง
+        /*
+        setInterval(() => {
+            fetch('/api/get_status')
+                .then(res => res.json())
+                .then(data => {
+                    if(data.reached) window.location.href = '/';
+                });
+        }, 2000);
+        */
+    </script>
+</body>
+</html>

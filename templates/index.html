@@ -20,6 +20,9 @@
         * { 
             box-sizing: border-box; 
             -webkit-tap-highlight-color: transparent; 
+            /* ป้องกันการคลุมดำเลือกข้อความเพื่อให้ดูเป็นแอปหุ่นยนต์ */
+            -webkit-user-select: none;
+            user-select: none;
         }
 
         body, html {
@@ -37,7 +40,7 @@
             align-items: center;
         }
 
-        /* ปุ่ม Fullscreen ขวาบน */
+        /* ปุ่ม Fullscreen */
         .fullscreen-btn {
             position: fixed;
             top: 25px;
@@ -73,17 +76,16 @@
             box-shadow: 0 40px 100px rgba(0,0,0,0.5);
         }
 
-        /* ส่วนแสดงรูปภาพสาขา */
         .dept-image-container {
             width: 100%;
-            max-width: 350px; /* ปรับขนาดความกว้างรูป */
+            max-width: 350px;
             margin: 0 auto 30px auto;
         }
 
         .dept-image {
             width: 100%;
             height: auto;
-            border-radius: 25px; /* มุมโค้งมน */
+            border-radius: 25px;
             border: 4px solid rgba(255, 255, 255, 0.2);
             box-shadow: 0 10px 30px rgba(0,0,0,0.3);
             object-fit: cover;
@@ -115,13 +117,57 @@
             border-radius: 100px;
             cursor: pointer;
             box-shadow: 0 15px 40px rgba(0, 200, 83, 0.4);
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
         }
 
         .start-btn:active {
             transform: scale(0.95);
         }
+
+        /* ===== IDLE SCREEN ===== */
+        .idle {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle, #1a2a40 0%, #0a192f 100%);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 9999;
+            cursor: pointer;
+        }
+
+        .idle.active {
+            display: flex;
+        }
+
+        .robot-img {
+            width: 80%;
+            max-width: 450px;
+            filter: drop-shadow(0 0 20px rgba(0, 229, 255, 0.5));
+            animation: float 3s ease-in-out infinite alternate;
+        }
+
+        .idle-text {
+            margin-top: 30px;
+            font-size: 2.5rem;
+            color: #00e5ff;
+            text-align: center;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes float {
+            from { transform: translateY(0); }
+            to { transform: translateY(-30px); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
     </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/idle.css') }}">
 </head>
 <body>
 
@@ -131,7 +177,7 @@
 
     <div class="main-card">
         <div class="dept-image-container">
-            <img src="https://scontent.fkkc2-1.fna.fbcdn.net/v/t39.30808-6/305398865_477896117680555_3204918105931786621_n.jpg?_nc_cat=105&ccb=1-7&_nc_sid=6ee11a&_nc_eui2=AeFPSrVnGHXML6Zf1vStlZSrny8fktKfjlmfLx-S0p-OWRqz4BvmW41zabnewFThacNJTxVKc_PQHRQzof_UTrRX&_nc_ohc=Vxc5eT2f9kcQ7kNvwFu2MXd&_nc_oc=AdmpAkgL7vNV73xbFxWcxMFG7PDIYxYw517zx-qL_-_Gfr_pcwangIwV354ZK6o9U2o&_nc_zt=23&_nc_ht=scontent.fkkc2-1.fna&_nc_gid=Sr5lsB7Cw5MyrphgzNXTkw&oh=00_AfmMmwSeTbZ6bwpJ0Wkvr2JfBWyyb2VXwUGqbeNmUhi92A&oe=694D8420" alt="Department Image" class="dept-image">
+            <img src="/static/images/comengi.jpg" alt="Department Image" class="dept-image">
         </div>
         
         <h1>ยินดีต้อนรับ</h1>
@@ -140,7 +186,33 @@
         <button class="start-btn" onclick="goToRooms()">เลือกห้องเรียน</button>
     </div>
 
+    <div id="idle-screen" class="idle" onclick="wakeUp(event)">
+    <div class="robot-face-canvas">
+        <div class="antenna-l"><div class="antenna-tip" style="left:-7px; top:-15px;"></div></div>
+        <div class="antenna-r"><div class="antenna-tip" style="left:-7px; top:-15px;"></div></div>
+        
+        <div class="circuit-line line-left"></div>
+        <div class="circuit-line line-right"></div>
+
+        <div class="eyes-container">
+            <div class="robot-eye"><div class="pupil"></div></div>
+            <div class="robot-eye"><div class="pupil"></div></div>
+        </div>
+        
+        <div class="robot-mouth"></div>
+    </div>
+    
+    <div style="text-align: center; margin-top: 40px;">
+        <p class="idle-text" style="color: #ffcc00; font-size: 1.5rem; margin-bottom: 5px;">UDRU ROBOT</p>
+        <p style="color: #00e5ff; font-weight: 300; letter-spacing: 1px;">วิศวกรรมคอมพิวเตอร์และการสื่อสาร</p>
+    </div>
+    <p class="idle-text">แตะหน้าจอเพื่อเริ่มต้นใช้งาน</p>
+</div>
+
     <script>
+        const IDLE_TIME = 10000; // 10 วินาที
+        let idleTimer;
+
         function toggleFullscreen() {
             if (!document.fullscreenElement) {
                 document.documentElement.requestFullscreen();
@@ -153,9 +225,39 @@
             window.location.href = "/room"; 
         }
 
+        function showIdle() {
+            document.getElementById("idle-screen").classList.add("active");
+        }
+
+        function hideIdle() {
+            document.getElementById("idle-screen").classList.remove("active");
+        }
+
+        function resetIdleTimer() {
+            clearTimeout(idleTimer);
+            // ถ้านิ่งครบ 10 วินาที ให้แสดงหน้า Idle
+            idleTimer = setTimeout(showIdle, IDLE_TIME);
+        }
+
+        function wakeUp(event) {
+            if (event) event.stopPropagation(); // ป้องกันการกดทะลุไปโดนปุ่มด้านล่าง
+            hideIdle();
+            resetIdleTimer();
+            console.log("Wake up robot");
+        }
+
+        // ตรวจจับการใช้งานทุกประเภทเพื่อรีเซ็ตตัวนับเวลา
+        ["touchstart", "mousedown", "mousemove", "keypress"].forEach(evt => {
+            document.addEventListener(evt, resetIdleTimer, true);
+        });
+
+        // ป้องกันการ Swipe เพื่อ Refresh หรือ Zoom บนจอสัมผัส
         document.addEventListener('touchmove', function (e) {
             if (e.scale !== 1) e.preventDefault();
         }, { passive: false });
+
+        // เริ่มต้นตัวนับเวลาเมื่อโหลดหน้าเสร็จ
+        resetIdleTimer();
     </script>
 
 </body>

@@ -115,6 +115,33 @@
             color: #ff8a80;
             text-decoration: none;
         }
+            .room-btn {
+        padding: 35px;
+        font-size: 2rem;
+        border: 2px solid rgba(0, 229, 255, 0.3); /* ขอบสีฟ้าเรืองแสง */
+        border-radius: 30px;
+        cursor: pointer;
+        background: rgba(0, 74, 153, 0.2); /* พื้นหลังน้ำเงิน UDRU แบบโปร่งแสง */
+        color: #00e5ff; /* ตัวหนังสือสีฟ้าเรืองแสง */
+        font-weight: 600;
+        transition: 0.3s;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+
+    .room-btn:hover {
+        background: rgba(0, 229, 255, 0.2);
+        box-shadow: 0 0 20px rgba(0, 229, 255, 0.4);
+        transform: translateY(-5px);
+    }
+
+    .room-btn span {
+        color: #ffcc00; /* คำอธิบายห้องเป็นสีทอง UDRU */
+        display: block;
+        font-size: 1rem;
+        font-weight: 300;
+        margin-top: 5px;
+    }
     </style>
 </head>
 <body>
@@ -130,15 +157,18 @@
     <p id="status">กรุณาเลือกห้องที่ต้องการไป</p>
 
     <div class="grid">
-        <button class="room-btn" onclick="selectRoom('101')">101 <span>ห้องปฏิบัติการ 1</span></button>
-        <button class="room-btn" onclick="selectRoom('102')">102 <span>ห้องบรรยาย 1</span></button>
-        <button class="room-btn" onclick="selectRoom('201')">201 <span>ห้องปฏิบัติการ 2</span></button>
-        <button class="room-btn" onclick="selectRoom('202')">202 <span>ห้องพักอาจารย์</span></button>
-        <button class="room-btn" onclick="selectRoom('301')">301 <span>ห้องเรียน</span></button>
-        <button class="room-btn" onclick="selectRoom('302')">302 <span>ห้องประชุม</span></button>
-        <button class="room-btn" onclick="selectRoom('LAB')">LAB <span>ห้องทดลอง</span></button>
-        <button class="room-btn" onclick="selectRoom('OFFICE')">OFFICE <span>สำนักงาน</span></button>
-    </div>
+    <button class="room-btn" onclick="selectRoom('1301')">1301 <span>ห้องเรียน</span></button>
+    <button class="room-btn" onclick="selectRoom('1302')">1302 <span>ห้องเรียน</span></button>
+    <button class="room-btn" onclick="selectRoom('1303')">1303 <span>ห้องเรียน</span></button>
+    
+    <button class="room-btn" onclick="selectRoom('1304a')">1304a <span>ห้องปฏิบัติการ A</span></button>
+    <button class="room-btn" onclick="selectRoom('1304b')">1304b <span>ห้องปฏิบัติการ B</span></button>
+    
+    <button class="room-btn" onclick="selectRoom('1305')">1305 <span>ห้องเรียน</span></button>
+    <button class="room-btn" onclick="selectRoom('1306')">1306 <span>ห้องพักอาจารย์</span></button>
+    <button class="room-btn" onclick="selectRoom('1307')">1307 <span>ห้องเรียน</span></button>
+    <button class="room-btn" onclick="selectRoom('1308')">1308 <span>ห้องอุปกรณ์</span></button>
+</div>
 
     <a href="/" class="back-btn">← กลับหน้าหลัก</a>
 </div>
@@ -160,14 +190,20 @@ function toggleFullscreen() {
 
 /* เลือกห้อง */
 function selectRoom(room) {
-    document.getElementById("status").innerText =
-        "🤖 กำลังนำทางไปยังห้อง " + room;
+    // แจ้งสถานะชั่วคราว
+    document.getElementById("status").innerText = "🤖 กำลังประมวลผลการไปห้อง " + room;
 
-    // เชื่อม ROS ผ่าน Flask
+    // 1. ส่งคำสั่งไปที่ API (Flask)
     fetch('/api/move_to/' + room)
         .then(res => res.json())
-        .then(data => console.log(data))
-        .catch(err => console.error(err));
+        .then(data => {
+            // 2. เมื่อสำเร็จ ให้เปลี่ยนหน้าไปหน้า Navigation พร้อมส่งชื่อห้องไปด้วย
+            window.location.href = '/navigating?room=' + room;
+        })
+        .catch(err => {
+            console.error("Error:", err);
+            alert("ไม่สามารถเชื่อมต่อกับหุ่นยนต์ได้");
+        });
 }
 
 /* ป้องกัน Pull-to-refresh */
