@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>UDRU CCE - แผนที่นำทาง</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root { --udru-blue: #004a99; --udru-gold: #ffcc00; --cce-cyan: #00e5ff; }
+        body {
+            margin: 0; background: #050c1a; color: white; font-family: 'Kanit', sans-serif;
+            display: flex; flex-direction: column; height: 100vh;
+        }
+
+        /* ส่วนบนบอกสถานะ */
+        .top-nav {
+            padding: 20px; background: rgba(0, 74, 153, 0.8);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+
+        /* พื้นที่โชว์แมพขนาดใหญ่ */
+        .map-viewport {
+            flex-grow: 1; position: relative; overflow: hidden;
+            border: 2px solid var(--cce-cyan); margin: 10px; border-radius: 15px;
+            background: #000; display: flex; align-items: center; justify-content: center;
+        }
+
+        #realtime-map {
+            max-width: 100%; max-height: 100%;
+            /* [COMMENT] ในอนาคตใช้ดึง stream จาก ROS */
+            /* content: url('/api/map_stream'); */
+        }
+
+        /* Overlay ข้อมูลหุ่นยนต์ */
+        .robot-data {
+            position: absolute; bottom: 20px; left: 20px;
+            background: rgba(0, 0, 0, 0.7); padding: 15px;
+            border-radius: 10px; border-left: 5px solid var(--udru-gold);
+        }
+
+        .controls {
+            padding: 20px; display: flex; gap: 15px; justify-content: center;
+        }
+
+        .btn {
+            padding: 12px 25px; border-radius: 50px; border: none; font-family: 'Kanit';
+            cursor: pointer; font-weight: 600;
+        }
+        .btn-video { background: var(--udru-gold); color: #000; }
+        .btn-cancel { background: #ff5252; color: white; }
+    </style>
+</head>
+<body>
+
+    <div class="top-nav">
+        <div>
+            <span style="opacity: 0.7;">เป้าหมาย:</span> 
+            <span style="font-size: 1.5rem; color: var(--udru-gold);">ห้อง {{ room_id }}</span>
+        </div>
+        <div id="connection-status">📡 เชื่อมต่อ ROS สำเร็จ</div>
+    </div>
+
+    <div class="map-viewport">
+    <img id="realtime-map" src="/api/map_feed" style="width: 100%; height: 100%; object-fit: contain;">
+
+    <div class="robot-data">
+        <div style="color: var(--cce-cyan); font-weight: 600; margin-bottom: 5px;">LIVE TELEMETRY</div>
+        <div>X: <span id="pos-x">1.24</span>, Y: <span id="pos-y">-0.85</span></div>
+        <div>ความเร็ว: <span id="speed">0.22 m/s</span></div>
+        <div id="status-text">สถานะ: <span style="color: #00ff00;">กำลังเคลื่อนที่</span></div>
+    </div>
+</div>
+        
+        <div class="robot-data">
+            <div>ความเร็ว: <span id="speed">0.25 m/s</span></div>
+            <div>แบตเตอรี่: <span id="battery">85%</span></div>
+            <div>สถานะ: <span style="color: #00ff00;">Moving</span></div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button class="btn btn-video" onclick="history.back()">สลับไปดูวิดีโอ</button>
+        <button class="btn btn-cancel" onclick="location.href='/room'">ยกเลิกการนำทาง</button>
+        <button class="btn" style="background: var(--cce-cyan);" onclick="location.href='/arrived?room={{room_id}}'">จำลองว่าถึงแล้ว</button>
+    </div>
+
+    <script>
+        // [COMMENT] โค้ด JavaScript สำหรับดึงพิกัดหุ่นยนต์มาวาดจุดบนแมพ
+        /*
+        function updateRobotPose() {
+            fetch('/api/robot_pose')
+                .then(res => res.json())
+                .then(data => {
+                    // อัปเดตตำแหน่งจุดบนหน้าจอ
+                });
+        }
+        setInterval(updateRobotPose, 500);
+        */
+    </script>
+</body>
+</html>

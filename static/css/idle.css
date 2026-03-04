@@ -1,0 +1,108 @@
+/* คอนเทนเนอร์หลักของหน้าหุ่น */
+.robot-face-canvas {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    padding: 60px;
+    background: rgba(0, 74, 153, 0.1); /* ใช้สีน้ำเงิน UDRU จางๆ */
+    border: 4px solid #00e5ff;
+    border-radius: 80px;
+    box-shadow: 0 0 30px rgba(0, 229, 255, 0.2), inset 0 0 50px rgba(0, 229, 255, 0.1);
+    animation: floatFace 4s ease-in-out infinite alternate;
+}
+
+/* เพิ่มตรา UDRU หรือชื่อย่อบนหน้าผากหุ่น */
+.robot-face-canvas::before {
+    content: 'UDRU CCE'; /* CPE ย่อมาจาก Computer Engineering */
+    position: absolute;
+    top: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #ffcc00; /* สีทอง UDRU */
+    letter-spacing: 2px;
+    text-shadow: 0 0 10px #ffcc00;
+}
+
+/* เสาอากาศแบบสายอากาศสื่อสาร (Communication Engineering) */
+.antenna-l, .antenna-r {
+    position: absolute;
+    top: -40px;
+    width: 6px;
+    height: 50px;
+    background: #00e5ff;
+}
+.antenna-l { left: 60px; transform: rotate(-20deg); }
+.antenna-r { right: 60px; transform: rotate(20deg); }
+
+.antenna-tip {
+    position: absolute;
+    top: -65px;
+    width: 20px;
+    height: 20px;
+    background: #ffcc00; /* ปลายเสาสีทองสื่อถึง UDRU */
+    border-radius: 50%;
+    box-shadow: 0 0 20px #ffcc00;
+}
+
+/* ตกแต่งด้วยลายวงจรด้านข้าง (Circuit Design) */
+.circuit-line {
+    position: absolute;
+    width: 40px;
+    height: 2px;
+    background: rgba(0, 229, 255, 0.4);
+}
+.line-left { left: -20px; top: 50%; }
+.line-right { right: -20px; top: 50%; }
+
+/* ดวงตา */
+.eyes-container {
+    display: flex;
+    gap: 60px;
+    margin-top: 20px;
+}
+
+.robot-eye {
+    width: 90px;
+    height: 90px;
+    background: #00e5ff;
+    border-radius: 50%;
+    position: relative;
+    box-shadow: 0 0 40px #00e5ff;
+    animation: blinkEye 4s infinite;
+}
+
+.pupil {
+    position: absolute;
+    width: 25px;
+    height: 25px;
+    background: #fff;
+    border-radius: 50%;
+    top: 20%; left: 20%;
+}
+
+/* ปากที่แสดงคลื่นสัญญาณสื่อสาร (Signal Wave) */
+.robot-mouth {
+    margin-top: 30px;
+    width: 100px;
+    height: 15px;
+    border-bottom: 5px solid #00e5ff;
+    border-radius: 50%;
+    animation: signalPulse 2s infinite;
+}
+
+@keyframes signalPulse {
+    0%, 100% { opacity: 1; transform: scaleX(1); }
+    50% { opacity: 0.5; transform: scaleX(1.2); }
+}
+
+@keyframes blinkEye {
+    0%, 45%, 55%, 100% { transform: scaleY(1); }
+    50% { transform: scaleY(0.1); }
+}
+
+@keyframes floatFace {
+    from { transform: translateY(0); }
+    to { transform: translateY(-20px); }
+}

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>ถึงจุดหมายแล้ว - UDRU CCE Robot</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root { --udru-gold: #ffcc00; --cce-cyan: #00e5ff; }
+        body {
+            margin: 0; padding: 0; font-family: 'Kanit', sans-serif;
+            background: radial-gradient(circle, #0a192f 0%, #050c1a 100%);
+            color: white; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+
+        .success-icon {
+            font-size: 100px; color: var(--udru-gold);
+            filter: drop-shadow(0 0 20px rgba(255, 204, 0, 0.6));
+            margin-bottom: 20px;
+            animation: bounce 2s infinite;
+        }
+
+        h1 { font-size: 3rem; margin: 10px 0; color: white; }
+        p { font-size: 1.5rem; opacity: 0.8; margin-bottom: 40px; }
+
+        .btn-group { display: flex; gap: 20px; }
+
+        .btn {
+            padding: 20px 50px; font-size: 1.5rem; font-family: 'Kanit';
+            border-radius: 50px; border: none; cursor: pointer; transition: 0.3s;
+        }
+
+        .home-btn { background: var(--cce-cyan); color: #0a192f; font-weight: 600; }
+        .back-base-btn { background: transparent; border: 2px solid var(--udru-gold); color: var(--udru-gold); }
+
+        .home-btn:active, .back-base-btn:active { transform: scale(0.95); }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="success-icon">🤖</div>
+    <h1>ถึงห้อง {{ room_id }} แล้วครับ</h1>
+    <p>ขอบคุณที่ใช้บริการวิศวกรรมคอมพิวเตอร์และการสื่อสาร</p>
+
+    <div class="btn-group">
+        <button class="btn home-btn" onclick="location.href='/'">กลับหน้าแรก</button>
+        <button class="btn back-base-btn" onclick="returnToBase()">ส่งหุ่นกลับจุดเริ่ม</button>
+    </div>
+
+    <script>
+        function returnToBase() {
+            alert("หุ่นยนต์กำลังเดินทางกลับจุดเริ่มต้น...");
+            // [COMMENT] fetch('/api/move_to/home')
+            location.href = '/';
+        }
+    </script>
+</body>
+</html>

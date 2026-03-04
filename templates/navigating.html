@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>UDRU CCE - กำลังนำทาง</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root { 
+            --udru-blue: #004a99; 
+            --udru-gold: #ffcc00; 
+            --cce-cyan: #00e5ff; 
+        }
+        
+        body {
+            margin: 0; padding: 0; font-family: 'Kanit', sans-serif;
+            background: radial-gradient(circle, #0a192f 0%, #050c1a 100%);
+            color: white; 
+            height: 100vh; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center;
+            overflow: hidden; 
+            box-sizing: border-box;
+        }
+
+        .nav-header { text-align: center; padding-top: 2vh; flex-shrink: 0; }
+        .target-room { font-size: clamp(1.5rem, 5vh, 2.5rem); color: var(--udru-gold); margin: 0; text-shadow: 0 0 15px rgba(255, 204, 0, 0.4); }
+
+        .display-container {
+            width: 90%; max-width: 800px; flex-grow: 1;
+            background: #000; border: 2px solid var(--cce-cyan);
+            border-radius: 20px; margin: 1.5vh 0; overflow: hidden;
+            box-shadow: 0 0 25px rgba(0, 229, 255, 0.2);
+            position: relative;
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        /* ปรับแต่ง YouTube Player ให้เต็มกรอบ */
+        #player {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; /* กันคนกดหยุดวิดีโอ */
+        }
+
+        .video-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex; flex-direction: column; justify-content: center;
+            align-items: center; z-index: 10; cursor: pointer; transition: 0.5s;
+        }
+        .video-overlay.hidden { opacity: 0; pointer-events: none; }
+        
+        .play-btn-circle {
+            width: 80px; height: 80px; background: var(--udru-gold);
+            border-radius: 50%; display: flex; justify-content: center; align-items: center;
+            box-shadow: 0 0 20px var(--udru-gold); margin-bottom: 10px;
+        }
+
+        .info-card {
+            width: 85%; max-width: 750px;
+            background: rgba(0, 229, 255, 0.05); 
+            padding: 1.5vh 20px; border-radius: 15px; 
+            border-left: 5px solid var(--udru-gold);
+            backdrop-filter: blur(5px); flex-shrink: 0; margin-bottom: 1.5vh;
+        }
+
+        .bottom-section { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 1.5vh; padding-bottom: 2vh; flex-shrink: 0; }
+        .status-bar { background: rgba(255, 255, 255, 0.05); padding: 8px 25px; border-radius: 50px; display: flex; align-items: center; gap: 10px; border: 1px solid rgba(0, 229, 255, 0.2); font-size: 0.9rem; }
+        .dot { width: 10px; height: 10px; background: #00ff00; border-radius: 50%; animation: pulse 1s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+
+        .controls-group { display: flex; gap: 15px; }
+        .btn-action { padding: 10px 25px; border-radius: 50px; cursor: pointer; font-family: 'Kanit'; font-size: 1rem; transition: 0.3s; border: 2px solid transparent; text-decoration: none; display: flex; align-items: center; gap: 8px; }
+        .btn-cancel { background: rgba(255, 82, 82, 0.1); border-color: #ff5252; color: #ff8a80; }
+        .btn-map { background: rgba(0, 229, 255, 0.1); border-color: var(--cce-cyan); color: var(--cce-cyan); }
+    </style>
+</head>
+<body>
+
+    <div class="nav-header">
+        <p style="margin:0; opacity: 0.7; font-size: 0.9rem;">หุ่นยนต์ CCE กำลังนำทางไปที่</p>
+        <h1 class="target-room">ห้อง {{ room_id }}</h1>
+    </div>
+
+    <div class="display-container">
+        <div class="video-overlay" id="overlay" onclick="startNav()">
+            <div class="play-btn-circle">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="black"><path d="M8 5v14l11-7z"/></svg>
+            </div>
+            <p style="color:var(--udru-gold)">แตะเพื่อเริ่มการนำทาง</p>
+        </div>
+        
+        <div id="player"></div>
+    </div>
+
+    <div class="info-card">
+        <h4 style="margin: 0; color: var(--udru-gold); font-size: 0.9rem;">วิชาที่สอนในห้องนี้:</h4>
+        <p style="font-size: 1rem; margin: 5px 0; color: #eee; line-height: 1.4;">{{ info.subjects }}</p>
+    </div>
+
+    <div class="bottom-section">
+        <div class="status-bar">
+            <div class="dot"></div>
+            <span id="move-status">รอการยืนยันเพื่อเริ่มเคลื่อนที่...</span>
+        </div>
+
+        <div class="controls-group">
+            <button class="btn-action btn-cancel" onclick="confirmCancel()">✕ ยกเลิก</button>
+            <a href="/view_map?room={{ room_id }}" class="btn-action btn-map">🗺️ แผนที่</a>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        var tag = document.createElement('script');
+    tag.src = "https://www.youtube.com/iframe_api";
+    var firstScriptTag = document.getElementsByTagName('script')[0];
+    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+    var player;
+    var hasSpoken = false; // ตัวแปรเช็คว่าพูดไปหรือยัง เพื่อไม่ให้พูดซ้ำตอนวิดีโอโหลดใหม่
+
+    function onYouTubeIframeAPIReady() {
+        player = new YT.Player('player', {
+            height: '100%',
+            width: '100%',
+            videoId: '{{ info.youtube_id }}',
+            playerVars: {
+                'autoplay': 0,
+                'controls': 0,
+                'mute': 1,
+                'loop': 1,
+                'playlist': '{{ info.youtube_id }}',
+                'modestbranding': 1,
+                'rel': 0
+            },
+            events: {
+                'onStateChange': onPlayerStateChange // เพิ่ม Event ตรวจจับการเปลี่ยนสถานะ
+            }
+        });
+    }
+
+    // ฟังก์ชันตรวจจับสถานะวิดีโอ
+    function onPlayerStateChange(event) {
+        // YT.PlayerState.PLAYING คือสถานะที่วิดีโอเริ่มเล่นจริงๆ (พ้นช่วง Buffer แล้ว)
+        if (event.data == YT.PlayerState.PLAYING && !hasSpoken) {
+            startSpeaking(); // สั่งให้ AI พูด
+            hasSpoken = true; // ล็อกไว้ไม่ให้พูดซ้ำ
+        }
+    }
+
+    function startNav() {
+        console.log("Waiting for video to buffer...");
+        if (player && player.playVideo) {
+            player.playVideo();
+        }
+        
+        // ซ่อน Overlay ทันทีที่กด แต่ยังไม่สั่งพูด
+        const overlay = document.getElementById('overlay');
+        overlay.classList.add('hidden');
+        document.getElementById('move-status').innerText = "กำลังเตรียมการและโหลดข้อมูล...";
+    }
+
+    // แยกฟังก์ชันการพูดออกมา
+    function startSpeaking() {
+        console.log("Video started! Now speaking...");
+        document.getElementById('move-status').innerText = "กำลังเคลื่อนที่อย่างระมัดระวัง...";
+        
+        window.speechSynthesis.cancel(); 
+        const dubText = "{{ info.dub if info.dub else 'ขณะนี้กำลังพาท่านไปยังจุดหมายครับ' }}";
+        const msg = new SpeechSynthesisUtterance(dubText);
+        
+        const voices = window.speechSynthesis.getVoices();
+        const thaiVoice = voices.find(v => v.lang.includes('th') && v.name.includes('Google')) || 
+                          voices.find(v => v.lang.includes('th'));
+        
+        if (thaiVoice) msg.voice = thaiVoice;
+        
+        msg.lang = 'th-TH';
+        msg.rate = 0.8;
+        msg.pitch = 1.05;
+        window.speechSynthesis.speak(msg);
+    }
+        function confirmCancel() {
+            window.speechSynthesis.cancel();
+            if (player && player.pauseVideo) player.pauseVideo();
+            
+            Swal.fire({
+                title: 'ยกเลิกการนำทาง?',
+                text: "หุ่นยนต์จะหยุดการเคลื่อนที่ทันที",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#00e5ff',
+                cancelButtonColor: '#ff4444',
+                confirmButtonText: 'ใช่, ยกเลิก',
+                cancelButtonText: 'นำทางต่อ',
+                background: '#1a1a1a', 
+                color: '#ffffff'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = '/room';
+                } else {
+                    if (player && player.playVideo) player.playVideo();
+                }
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <title>CCE UDRU - Smart Navigation Robot</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --udru-blue: #004a99;
+            --udru-gold: #ffcc00;
+            --cce-cyan: #00e5ff;
+        }
+
+        * { 
+            box-sizing: border-box; 
+            -webkit-tap-highlight-color: transparent; 
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        body, html {
+            height: 100%; width: 100%; margin: 0; padding: 0;
+            font-family: 'Kanit', sans-serif;
+            background: #0a192f;
+            /* เพิ่มเส้น Grid พื้นหลังเพื่อให้ดูเป็น Engineering */
+            background-image: 
+                linear-gradient(rgba(0, 229, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 229, 255, 0.05) 1px, transparent 1px);
+            background-size: 50px 50px;
+            color: white;
+            overflow: hidden;
+            display: flex; justify-content: center; align-items: center;
+        }
+
+        /* ปุ่ม Fullscreen */
+        .fullscreen-btn {
+            position: fixed; top: 25px; right: 25px; z-index: 100;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(0, 229, 255, 0.3);
+            color: white; padding: 12px; border-radius: 12px;
+            cursor: pointer; backdrop-filter: blur(10px);
+        }
+
+        /* การ์ดหลักดีไซน์ High-Tech */
+        .main-card {
+            z-index: 1; text-align: center; width: 85%; max-width: 900px;
+            padding: 60px 40px;
+            background: rgba(10, 25, 47, 0.8);
+            backdrop-filter: blur(20px);
+            border: 2px solid rgba(0, 229, 255, 0.2);
+            border-radius: 40px;
+            box-shadow: 0 0 50px rgba(0, 229, 255, 0.1), inset 0 0 20px rgba(0, 229, 255, 0.05);
+        }
+
+        .dept-image-container {
+            width: 100%; max-width: 320px; margin: 0 auto 35px auto;
+            position: relative;
+        }
+
+        /* เพิ่มวงแหวนเรืองแสงรอบรูปภาพ */
+        .dept-image-container::after {
+            content: ''; position: absolute; inset: -10px;
+            border: 2px dashed var(--cce-cyan);
+            border-radius: 50%; opacity: 0.3;
+            animation: rotate 10s linear infinite;
+        }
+
+        @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        .dept-image {
+            width: 180px; height: 180px; border-radius: 50%;
+            border: 5px solid var(--udru-blue);
+            box-shadow: 0 0 30px rgba(0, 74, 153, 0.5);
+            object-fit: cover;
+        }
+
+        h1 {
+            font-size: 3.8rem; margin: 0; font-weight: 600;
+            letter-spacing: 2px;
+            background: linear-gradient(to bottom, #fff, #aaa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        h2 {
+            font-size: 1.6rem; color: var(--udru-gold);
+            font-weight: 400; margin-top: 10px; margin-bottom: 50px;
+            letter-spacing: 1px;
+        }
+
+        /* ปุ่มเลือกห้องแบบ Modern CCE */
+        .start-btn {
+            background: transparent;
+            color: var(--cce-cyan);
+            border: 2px solid var(--cce-cyan);
+            padding: 20px 60px;
+            font-size: 1.8rem; font-weight: 600;
+            border-radius: 15px;
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(0, 229, 255, 0.2);
+            transition: all 0.3s ease;
+            position: relative; overflow: hidden;
+        }
+
+        .start-btn:hover {
+            background: var(--cce-cyan);
+            color: #0a192f;
+            box-shadow: 0 0 40px rgba(0, 229, 255, 0.5);
+        }
+
+        /* ===== IDLE SCREEN ปรับแต่งใหม่ ===== */
+        .idle {
+            position: fixed; inset: 0;
+            background: #050c1a;
+            display: none; justify-content: center; align-items: center;
+            flex-direction: column; z-index: 9999;
+        }
+
+        .idle.active { display: flex; }
+
+        /* ปรับข้อความในหน้า Idle ให้เป็นชื่อย่อสาขา */
+        .cce-tag {
+            color: var(--udru-gold);
+            font-size: 2rem;
+            font-weight: 600;
+            margin-top: 20px;
+            letter-spacing: 5px;
+        }
+        .start-btn {
+            background: transparent;
+            color: var(--udru-gold);
+            border: 2px solid var(--udru-gold);
+            padding: 20px 60px;
+            font-size: 1.8rem; font-weight: 600;
+            border-radius: 15px;
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(255, 204, 0, 0.2);
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .start-btn:hover {
+            background: var(--udru-gold);
+            color: #0a192f;
+            box-shadow: 0 0 40px rgba(255, 204, 0, 0.5);
+        }
+
+        .udru-tag {
+            color: var(--udru-gold);
+            font-size: 2.2rem;
+            font-weight: 600;
+            margin-top: 20px;
+            letter-spacing: 4px;
+            text-shadow: 0 0 15px rgba(255, 204, 0, 0.4);
+        }
+    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/idle.css') }}">
+</head>
+<body>
+
+    <button class="fullscreen-btn" onclick="toggleFullscreen()">
+        <svg viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+    </button>
+
+    <div class="main-card">
+        <div class="dept-image-container">
+            <img src="/static/images/comengi.jpg" alt="CCE UDRU" class="dept-image">
+        </div>
+        
+        <h1>UDRU ROBOT</h1>
+        <h2>วิศวกรรมคอมพิวเตอร์และการสื่อสาร<br>มหาวิทยาลัยราชภัฏอุดรธานี</h2>
+
+        <button class="start-btn" onclick="goToRooms()">
+            <span style="vertical-align: middle;">เลือกห้องเรียน</span>
+        </button>
+    </div>
+
+    <div id="idle-screen" class="idle" onclick="wakeUp(event)">
+        <div class="robot-face-canvas">
+            <div class="antenna-l"><div class="antenna-tip"></div></div>
+            <div class="antenna-r"><div class="antenna-tip"></div></div>
+            <div class="eyes-container">
+                <div class="robot-eye"><div class="pupil"></div></div>
+                <div class="robot-eye"><div class="pupil"></div></div>
+            </div>
+            <div class="robot-mouth"></div>
+        </div>
+        
+        <div class="cce-tag">CCE UDRU</div>
+        <p style="color: #00e5ff; font-weight: 300; margin-top: 10px;">สาขาวิศวกรรมคอมพิวเตอร์และการสื่อสาร</p>
+        <p class="idle-text" style="font-size: 1.2rem; margin-top: 40px; opacity: 0.5;">แตะหน้าจอเพื่อเริ่มต้น</p>
+    </div>
+
+    <script>
+        const IDLE_TIME = 20000; // ปรับเป็น 20 วินาทีเพื่อให้คนอ่านข้อมูลหน้าแรกได้นานขึ้น
+        let idleTimer;
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        function goToRooms() {
+            window.location.href = "/room"; 
+        }
+
+        function showIdle() {
+            document.getElementById("idle-screen").classList.add("active");
+        }
+
+        function hideIdle() {
+            document.getElementById("idle-screen").classList.remove("active");
+        }
+
+        function resetIdleTimer() {
+            clearTimeout(idleTimer);
+            idleTimer = setTimeout(showIdle, IDLE_TIME);
+        }
+
+        function wakeUp(event) {
+            if (event) event.stopPropagation();
+            hideIdle();
+            resetIdleTimer();
+        }
+
+        ["touchstart", "mousedown"].forEach(evt => {
+            document.addEventListener(evt, resetIdleTimer, true);
+        });
+
+        resetIdleTimer();
+    </script>
+</body>
+</html>

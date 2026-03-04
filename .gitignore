@@ -1,0 +1,7 @@
+static/videos/
+*.mp4
+*.zip
+*.rar
+__pycache__/
+venv/
+.env
