@@ -125,24 +125,61 @@
     var hasSpoken = false; // ตัวแปรเช็คว่าพูดไปหรือยัง เพื่อไม่ให้พูดซ้ำตอนวิดีโอโหลดใหม่
 
     function onYouTubeIframeAPIReady() {
+    const videoId = '{{ info.youtube_id }}';
+
+    // เช็คว่ามี Video ID หรือไม่
+    if (videoId && videoId !== 'None' && videoId !== '') {
         player = new YT.Player('player', {
             height: '100%',
             width: '100%',
-            videoId: '{{ info.youtube_id }}',
+            videoId: videoId,
             playerVars: {
                 'autoplay': 0,
                 'controls': 0,
                 'mute': 1,
                 'loop': 1,
-                'playlist': '{{ info.youtube_id }}',
+                'playlist': videoId,
                 'modestbranding': 1,
                 'rel': 0
             },
             events: {
-                'onStateChange': onPlayerStateChange // เพิ่ม Event ตรวจจับการเปลี่ยนสถานะ
+                'onStateChange': onPlayerStateChange
             }
         });
+    } else {
+        // --- กรณีไม่มีวิดีโอ (1306, 1308) ---
+        const playerDiv = document.getElementById('player');
+        playerDiv.style.display = 'flex';
+        playerDiv.style.flexDirection = 'column';
+        playerDiv.style.alignItems = 'center';
+        playerDiv.style.justifyContent = 'center';
+        playerDiv.style.backgroundColor = '#1a252f'; // สีเข้มดูทันสมัย
+        playerDiv.style.color = 'white';
+        
+        // กำหนดข้อความตามเลขห้อง
+        let icon = 'fa-door-closed';
+        let message = 'จุดหมายปลายทาง';
+        
+        if ('{{ room_id }}' === '1306') {
+            icon = 'fa-user-tie';
+            message = 'ห้องพักอาจารย์ (งดใช้เสียง)';
+        } else if ('{{ room_id }}' === '1308') {
+            icon = 'fa-tools';
+            message = 'ห้องวัสดุ อุปกรณ์และเครื่องมือ';
+        }
+
+        playerDiv.innerHTML = `
+            <i class="fas ${icon}" style="font-size: 80px; margin-bottom: 20px; color: #3498db;"></i>
+            <h2 style="margin: 0;">${message}</h2>
+            <p style="opacity: 0.8;">ถึงที่หมายเรียบร้อยแล้ว</p>
+        `;
+        
+        // เรียกฟังก์ชันเสียงพูดทันทีเพราะไม่มีวิดีโอให้รอ
+        if (typeof startSpeaking === "function") {
+            startSpeaking();
+        }
     }
+}
 
     // ฟังก์ชันตรวจจับสถานะวิดีโอ
     function onPlayerStateChange(event) {
@@ -188,8 +225,8 @@
         function confirmCancel() {
             window.speechSynthesis.cancel();
             if (player && player.pauseVideo) player.pauseVideo();
-            
-            Swal.fire({
+
+                Swal.fire({
                 title: 'ยกเลิกการนำทาง?',
                 text: "หุ่นยนต์จะหยุดการเคลื่อนที่ทันที",
                 icon: 'warning',
@@ -200,14 +237,23 @@
                 cancelButtonText: 'นำทางต่อ',
                 background: '#1a1a1a', 
                 color: '#ffffff'
-            }).then((result) => {
+             }).then((result) => {
                 if (result.isConfirmed) {
-                    window.location.href = '/room';
-                } else {
-                    if (player && player.playVideo) player.playVideo();
-                }
-            });
-        }
+                // --- ส่วนที่เพิ่มใหม่: สั่งหยุดหุ่นที่ Ubuntu จริงๆ ---
+                const ROBOT_IP = "192.168.1.46"; // IP ของ Ubuntu
+                fetch(`http://${ROBOT_IP}:5000/stop`)
+                    .then(() => {
+                        window.location.href = '/room';
+                    })
+                    .catch(err => {
+                        console.error("Stop command failed", err);
+                        window.location.href = '/room';
+                    });
+            } else {
+                if (player && player.playVideo) player.playVideo();
+            }
+        });
+    }
     </script>
 </body>
 </html>

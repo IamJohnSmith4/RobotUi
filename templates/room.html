@@ -5,216 +5,321 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>เลือกห้องปลายทาง - UDRU Robot</title>
 
-    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
-        :root {
-            --udru-blue: #004a99;
-            --udru-gold: #ffcc00;
-            --cce-cyan: #00e5ff;
-        }
+    :root {
+        --udru-blue: #004a99;
+        --udru-gold: #ffcc00;
+        --cce-cyan: #00e5ff;
+        --el-red: #ff3d00;
+        --office-green: #00e676;
+        --glass-bg: rgba(255, 255, 255, 0.05);
+        --glass-border: rgba(255, 255, 255, 0.1);
+        --font-main: 'Kanit', sans-serif;
+    }
 
-        * {
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
+    * {
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+        user-select: none;
+    }
 
-        body {
-            margin: 0;
-            font-family: 'Kanit', sans-serif;
-            background: linear-gradient(135deg, #141e30, #243b55);
-            height: 100vh;
-            width: 100vw;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: white;
-            overflow: hidden;
-        }
+    body {
+        margin: 0;
+        padding: 0;
+        font-family: var(--font-main);
+        background: radial-gradient(circle at center, #1b2735 0%, #050608 100%);
+        height: 100vh;
+        width: 100vw;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: white;
+        overflow: hidden;
+    }
 
-        .fullscreen-btn {
-            position: fixed;
-            top: 25px;
-            right: 25px;
-            z-index: 100;
-            background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.3);
-            padding: 15px;
-            border-radius: 15px;
-            cursor: pointer;
-            backdrop-filter: blur(10px);
-        }
+    /* ตกแต่ง Container หลัก */
+    .container {
+        width: 92%;
+        max-width: 1200px;
+        background: rgba(10, 15, 25, 0.8);
+        backdrop-filter: blur(25px);
+        -webkit-backdrop-filter: blur(25px);
+        border-radius: 40px;
+        padding: 40px;
+        text-align: center;
+        box-shadow: 0 0 60px rgba(0,0,0,0.8), 
+                    inset 0 0 30px rgba(0, 229, 255, 0.03);
+        border: 1px solid rgba(0, 229, 255, 0.2);
+        position: relative;
+    }
 
-        .fullscreen-btn svg {
-            width: 25px;
-            height: 25px;
-            fill: white;
-        }
+    h1 {
+        font-size: 2.6rem;
+        font-weight: 700;
+        margin: 0 0 10px 0;
+        letter-spacing: 1px;
+        background: linear-gradient(to bottom, #ffffff 40%, #a1a1a1 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
 
-        .container {
-            width: 95%;
-            max-width: 1100px;
-            background: rgba(255,255,255,0.05);
-            backdrop-filter: blur(15px);
-            border-radius: 40px;
-            padding: 40px;
-            text-align: center;
-            box-shadow: 0 25px 50px rgba(0,0,0,0.4);
-            border: 1px solid rgba(255,255,255,0.1);
-        }
+    #status {
+        font-size: 1.2rem;
+        opacity: 0.9;
+        margin-bottom: 35px;
+        color: var(--cce-cyan);
+        text-shadow: 0 0 15px rgba(0, 229, 255, 0.4);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        min-height: 1.5em;
+    }
 
-        h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-            color: white;
-        }
+    /* Grid Layout */
+    .grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 18px;
+        max-height: 55vh;
+        overflow-y: auto;
+        padding: 10px;
+        scrollbar-width: none; /* ซ่อน scrollbar */
+    }
 
-        #status {
-            font-size: 1.2rem;
-            opacity: 0.85;
-            margin-bottom: 30px;
-            color: var(--cce-cyan);
-        }
+    .grid::-webkit-scrollbar { display: none; }
 
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 20px;
-            max-height: 60vh;
-            overflow-y: auto;
-            padding: 10px;
-        }
+    /* Room Button Styling */
+    .room-btn {
+        background: var(--glass-bg);
+        border: 1px solid var(--glass-border);
+        border-radius: 28px;
+        padding: 25px 15px;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+        overflow: hidden;
+    }
 
-        /* ปรับแต่ง Scrollbar สำหรับ Grid */
-        .grid::-webkit-scrollbar {
-            width: 8px;
-        }
-        .grid::-webkit-scrollbar-thumb {
-            background: var(--udru-gold);
-            border-radius: 10px;
-        }
+    .room-icon {
+        font-size: 1.6rem;
+        margin-bottom: 12px;
+        filter: drop-shadow(0 0 5px currentColor);
+    }
 
-        .room-btn {
-            padding: 25px 15px;
-            font-size: 1.8rem;
-            border: 2px solid rgba(0, 229, 255, 0.3);
-            border-radius: 25px;
-            cursor: pointer;
-            background: rgba(0, 74, 153, 0.2);
-            color: #00e5ff;
-            font-weight: 600;
-            transition: 0.3s;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
+    .room-btn b {
+        font-size: 2.2rem;
+        font-weight: 700;
+        line-height: 1;
+        margin-bottom: 8px;
+    }
 
-        .room-btn:hover {
-            background: rgba(0, 229, 255, 0.2);
-            box-shadow: 0 0 20px rgba(0, 229, 255, 0.4);
-            transform: translateY(-5px);
-        }
+    .room-btn span {
+        font-size: 0.85rem;
+        color: #e0e0e0;
+        font-weight: 300;
+        line-height: 1.3;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        min-height: 2.6em;
+    }
 
-        .room-btn:active {
-            transform: scale(0.95);
-        }
+    /* Color Variants */
+    .room-btn.cce { border-top: 5px solid var(--cce-cyan); color: var(--cce-cyan); }
+    .room-btn.el { border-top: 5px solid var(--el-red); color: var(--el-red); }
+    .room-btn.office { border-top: 5px solid var(--office-green); color: var(--office-green); }
+    .room-btn.tools { border-top: 5px solid var(--udru-gold); color: var(--udru-gold); }
 
-        .room-btn span {
-            color: var(--udru-gold);
-            display: block;
-            font-size: 0.9rem;
-            font-weight: 300;
-            margin-top: 5px;
-        }
+    /* Hover & Active Effects */
+    .room-btn:hover {
+        background: rgba(255, 255, 255, 0.1);
+        transform: translateY(-5px);
+        border-color: currentColor;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
 
-        .back-btn {
-            margin-top: 30px;
-            display: inline-block;
-            padding: 12px 35px;
-            font-size: 1.1rem;
-            background: rgba(255,82,82,0.1);
-            border: 1px solid #ff5252;
-            border-radius: 50px;
-            color: #ff8a80;
-            text-decoration: none;
-            transition: 0.3s;
-        }
-        
-        .back-btn:hover {
-            background: rgba(255,82,82,0.2);
-        }
+    .room-btn:active {
+        transform: scale(0.95);
+        filter: brightness(1.2);
+    }
 
-        /* Responsive สำหรับหน้าจอแนวตั้งหรือหน้าจอเล็ก */
-        @media (max-width: 900px) {
-            .grid { grid-template-columns: repeat(2, 1fr); }
-        }
+    /* Animation สำหรับการเลือก */
+    @keyframes pulse {
+        0% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.6; transform: scale(1.05); }
+        100% { opacity: 1; transform: scale(1); }
+    }
+    .loading-state { animation: pulse 1s infinite ease-in-out; pointer-events: none; }
+
+    /* Footer Buttons */
+    .footer-actions {
+        margin-top: 40px;
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+    }
+
+    .back-btn, .fullscreen-btn {
+        padding: 12px 30px;
+        font-size: 1rem;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 50px;
+        color: white;
+        text-decoration: none;
+        transition: 0.3s;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .back-btn:hover { background: rgba(255, 82, 82, 0.2); border-color: #ff5252; color: #ff8a80; }
+    .fullscreen-btn:hover { background: rgba(0, 229, 255, 0.2); border-color: var(--cce-cyan); }
+
+    /* Responsive */
+    @media (max-width: 1000px) { .grid { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 768px) { .grid { grid-template-columns: repeat(2, 1fr); } }
     </style>
 </head>
 <body>
 
-<button class="fullscreen-btn" onclick="toggleFullscreen()">
-    <svg viewBox="0 0 24 24">
-        <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
-    </svg>
-</button>
-
 <div class="container">
     <h1>เลือกห้องปลายทาง</h1>
-    <p id="status">กรุณาเลือกห้องที่ต้องการให้หุ่นยนต์นำทาง</p>
-
-    <div class="grid">
-        <button class="room-btn" onclick="selectRoom('1301')">1301 <span>ห้องปฏิบัติการคอมพิวเตอร์</span></button>
-        <button class="room-btn" onclick="selectRoom('1302')">1302 <span>ห้องวงจรไฟฟ้า</span></button>
-        <button class="room-btn" onclick="selectRoom('1303b')">1303b <span>สำนักงาน/ยานยนต์ไฟฟ้า</span></button>
-        <button class="room-btn" onclick="selectRoom('1304a')">1304a <span>ห้องปฏิบัติการเครือข่าย A</span></button>
-        <button class="room-btn" onclick="selectRoom('1304b')">1304b <span>ห้องปฏิบัติการ AI B</span></button>
-        <button class="room-btn" onclick="selectRoom('1305')">1305 <span>ห้องเครือข่ายไร้สาย</span></button>
-        <button class="room-btn" onclick="selectRoom('1307')">1307 <span>ห้องหุ่นยนต์/Drone</span></button>
-        <button class="room-btn" onclick="selectRoom('1306')">1306 <span>ห้องพักอาจารย์</span></button>
+    <div id="status">
+        <i class="fas fa-hand-pointer"></i> 
+        <span>กรุณาเลือกห้องที่ต้องการให้หุ่นยนต์นำทาง</span>
     </div>
 
-    <a href="/" class="back-btn">← กลับหน้าหลัก</a>
+    <div class="grid">
+        <button class="room-btn cce" onclick="selectRoom(this, '1301')">
+            <i class="fas fa-microchip room-icon"></i>
+            <b>1301</b>
+            <span>ห้องปฏิบัติการคอมพิวเตอร์และการจำลอง</span>
+        </button>
+        
+        <button class="room-btn el" onclick="selectRoom(this, '1302')">
+            <i class="fas fa-bolt-lightning room-icon"></i>
+            <b>1302</b>
+            <span>ห้องปฏิบัติการวงจรไฟฟ้า</span>
+        </button>
+
+        <button class="room-btn office" onclick="selectRoom(this, '1303a')">
+            <i class="fas fa-building-user room-icon"></i>
+            <b>1303a</b>
+            <span>สำนักงานวิศวกรรมอิเล็กทรอนิกส์</span>
+        </button>
+
+        <button class="room-btn cce" onclick="selectRoom(this, '1304a')">
+            <i class="fas fa-network-wired room-icon"></i>
+            <b>1304a</b>
+            <span>ห้องปฏิบัติการเครือข่ายและการสื่อสาร</span>
+        </button>
+
+        <button class="room-btn cce" onclick="selectRoom(this, '1304b')">
+            <i class="fas fa-brain room-icon"></i>
+            <b>1304b</b>
+            <span>ห้องปฏิบัติการคอมพิวเตอร์และ AI</span>
+        </button>
+
+        <button class="room-btn cce" onclick="selectRoom(this, '1305')">
+            <i class="fas fa-chalkboard-user room-icon"></i>
+            <b>1305</b>
+            <span>ห้องบรรยายวิศวกรรมคอมพิวเตอร์ 1</span>
+        </button>
+
+        <button class="room-btn office" onclick="selectRoom(this, '1306')">
+            <i class="fas fa-user-tie room-icon"></i>
+            <b>1306</b>
+            <span>ห้องพักอาจารย์วิศวกรรมคอมพิวเตอร์</span>
+        </button>
+        
+        <button class="room-btn el" onclick="selectRoom(this, '1307')">
+            <i class="fas fa-robot room-icon"></i>
+            <b>1307</b>
+            <span>วิศวกรรมการผลิตและหุ่นยนต์</span>
+        </button>
+
+        <button class="room-btn tools" onclick="selectRoom(this, '1308')">
+            <i class="fas fa-toolbox room-icon"></i>
+            <b>1308</b>
+            <span>ห้องวัสดุ อุปกรณ์และเครื่องมือ</span>
+        </button>
+    </div>
+
+    <div class="footer-actions">
+        <a href="/" class="back-btn"><i class="fas fa-arrow-left"></i> กลับหน้าหลัก</a>
+        <button class="fullscreen-btn" onclick="toggleFullscreen()"><i class="fas fa-expand"></i> เต็มจอ</button>
+    </div>
 </div>
 
 <script>
-/* บังคับ Fullscreen */
 function toggleFullscreen() {
     if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen().catch(err => {
-            console.log("Fullscreen error:", err);
-        });
+        document.documentElement.requestFullscreen().catch(err => console.log(err));
     } else {
         document.exitFullscreen();
     }
 }
 
-/* เลือกห้อง */
-function selectRoom(roomId) {
-    const statusLabel = document.getElementById("status");
-    statusLabel.innerText = "🤖 กำลังเตรียมการนำทางไปห้อง " + roomId + "...";
+function selectRoom(btnElement, roomId) {
+    const statusDiv = document.getElementById("status");
+    const statusText = statusDiv.querySelector("span");
+    const statusIcon = statusDiv.querySelector("i");
     
-    // 1. เรียก API สั่งหุ่นยนต์เคลื่อนที่
+    // UI Feedback: ทำให้ปุ่มอื่นจางลง
+    const allButtons = document.querySelectorAll('.room-btn');
+    allButtons.forEach(btn => {
+        btn.style.opacity = "0.2";
+        btn.style.pointerEvents = "none";
+    });
+    
+    // ไฮไลท์ปุ่มที่เลือก
+    btnElement.style.opacity = "1";
+    btnElement.classList.add('loading-state');
+    
+    // เปลี่ยนข้อความสถานะ
+    statusIcon.className = "fas fa-robot fa-spin";
+    statusText.innerHTML = `กำลังเตรียมนำทางไปห้อง <b>${roomId}</b>...`;
+
+    // ส่งคำสั่งไปยัง Robot API
     fetch('/api/move_to/' + roomId)
         .then(res => res.json())
         .then(data => {
-            console.log("Robot status:", data.status);
-            // 2. เมื่อ API ตอบกลับ ให้เปลี่ยนหน้าไปที่ URL /navigate/ห้อง (ตามโครงสร้าง Route ใหม่)
-            // วิธีนี้จะไปเรียกฟังก์ชัน navigate_to_room ใน app.py เพื่อดึงคลิปวิดีโอมาโชว์
-            window.location.href = '/navigate/' + roomId;
+            // หน่วงเวลาเล็กน้อยเพื่อให้ User เห็นว่าระบบตอบรับแล้ว
+            setTimeout(() => {
+                window.location.href = '/navigate/' + roomId;
+            }, 800);
         })
         .catch(err => {
             console.error("Error:", err);
-            statusLabel.innerText = "❌ เกิดข้อผิดพลาดในการเชื่อมต่อ";
-            alert("ไม่สามารถเชื่อมต่อกับระบบควบคุมหุ่นยนต์ได้");
+            statusIcon.className = "fas fa-exclamation-triangle";
+            statusText.innerText = "เกิดข้อผิดพลาดในการเชื่อมต่อ";
+            
+            // คืนค่าปุ่มให้กดใหม่ได้
+            setTimeout(() => {
+                allButtons.forEach(btn => {
+                    btn.style.opacity = "1";
+                    btn.style.pointerEvents = "all";
+                });
+                btnElement.classList.remove('loading-state');
+                statusIcon.className = "fas fa-hand-pointer";
+                statusText.innerText = "กรุณาเลือกห้องอีกครั้ง";
+            }, 2000);
         });
 }
 
-/* ป้องกัน Gesture พื้นฐานที่อาจกวน UI หุ่นยนต์ */
-document.addEventListener('touchmove', function (e) {
-    if (e.scale !== 1) e.preventDefault();
+// ป้องกันการ Zoom บนหน้าจอ Touch Screen
+document.addEventListener('touchstart', function(e) {
+    if (e.touches.length > 1) e.preventDefault();
 }, { passive: false });
 </script>
 
