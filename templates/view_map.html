@@ -9,10 +9,8 @@
     
     <style>
         :root { 
-            --udru-blue: #004a99; 
-            --udru-gold: #ffcc00; 
-            --cce-cyan: #00e5ff; 
-            --bg-dark: #050c1a;
+            --udru-blue: #004a99; --udru-gold: #ffcc00; 
+            --cce-cyan: #00e5ff; --bg-dark: #050c1a;
         }
         
         body {
@@ -20,120 +18,159 @@
             display: flex; flex-direction: column; height: 100vh; overflow: hidden;
         }
 
-        /* Top Header: แสดงเป้าหมายและ Progress */
         .header {
-            padding: 15px 25px;
-            background: rgba(10, 25, 47, 0.9);
+            padding: 15px 25px; background: rgba(10, 25, 47, 0.9);
             border-bottom: 1px solid rgba(0, 229, 255, 0.2);
             display: flex; justify-content: space-between; align-items: center;
         }
 
-        /* แถบเปอร์เซ็นต์การเดินทาง */
-        .nav-progress-container {
-            width: 40%; background: rgba(255,255,255,0.1); height: 8px; border-radius: 10px; overflow: hidden;
-        }
-        .nav-progress-bar {
-            width: 65%; /* ตัวเลขสมมติ */
-            background: linear-gradient(90deg, var(--udru-blue), var(--cce-cyan));
-            height: 100%; border-radius: 10px; transition: 0.5s;
-        }
+        .nav-progress-container { width: 40%; background: rgba(255,255,255,0.1); height: 8px; border-radius: 10px; overflow: hidden; }
+        .nav-progress-bar { width: 0%; background: linear-gradient(90deg, var(--udru-blue), var(--cce-cyan)); height: 100%; transition: 1s; }
 
-        /* พื้นที่แผนที่กว้างขวาง */
+        /* แผนที่แบบ Static แต่ขยับ Marker */
         .map-viewport {
             flex-grow: 1; position: relative; margin: 15px;
             background: #000; border-radius: 20px;
             border: 2px solid rgba(0, 229, 255, 0.3);
-            box-shadow: inset 0 0 30px rgba(0, 229, 255, 0.1);
+            overflow: hidden;
             display: flex; align-items: center; justify-content: center;
         }
 
-        #realtime-map {
-            width: 95%; height: 95%; object-fit: contain;
-            filter: hue-rotate(180deg) brightness(1.2); /* ปรับสี Map ให้เข้ากับธีมถ้าจำเป็น */
+        #map-bg {
+            max-width: 100%; max-height: 100%;
+            opacity: 0.7; /* ให้แผนที่ดูจางลงเพื่อให้หุ่นเด่นขึ้น */
         }
 
-        /* Telemetry HUD (Heads-Up Display) */
+        /* หุ่นยนต์ Marker */
+        #robot-marker {
+            position: absolute;
+            width: 40px; height: 40px;
+            color: var(--cce-cyan);
+            display: flex; justify-content: center; align-items: center;
+            transition: all 1s ease-in-out; /* ทำให้หุ่นเดินนุ่มนวล */
+            z-index: 10;
+        }
+
+        .ping {
+            position: absolute; width: 100%; height: 100%;
+            border: 2px solid var(--cce-cyan); border-radius: 50%;
+            animation: radar 2s infinite;
+        }
+
+        @keyframes radar {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(3); opacity: 0; }
+        }
+
         .hud-overlay {
             position: absolute; top: 20px; left: 20px;
             background: rgba(10, 25, 47, 0.85);
-            padding: 20px; border-radius: 15px;
+            padding: 15px; border-radius: 15px;
             border-left: 4px solid var(--cce-cyan);
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px); z-index: 5;
         }
 
-        .hud-item { margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
-        .hud-item i { color: var(--udru-gold); width: 20px; }
-
-        /* Bottom Controls */
         .controls {
             padding: 20px; background: rgba(10, 25, 47, 0.9);
             display: flex; gap: 20px; justify-content: center;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .btn {
-            padding: 12px 35px; border-radius: 12px; border: none; font-family: 'Kanit';
+            padding: 12px 30px; border-radius: 12px; border: none; font-family: 'Kanit';
             cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 10px;
             transition: 0.3s;
         }
-        .btn-video { background: var(--udru-gold); color: #000; }
-        .btn-cancel { background: #ff5252; color: white; }
-        .btn:hover { transform: translateY(-3px); filter: brightness(1.1); }
     </style>
 </head>
 <body>
 
     <div class="header">
         <div>
-            <span style="opacity: 0.6; font-size: 0.9rem;">กำลังมุ่งหน้าสู่:</span>
-            <div style="font-size: 1.6rem; font-weight: 600; color: var(--udru-gold);">
+            <span style="opacity: 0.6; font-size: 0.8rem;">จุดหมาย:</span>
+            <div style="font-size: 1.4rem; font-weight: 600; color: var(--udru-gold);">
                 <i class="fas fa-location-dot"></i> ห้อง {{ room_id }}
             </div>
         </div>
-        
-        <div class="nav-progress-container">
-            <div class="nav-progress-bar"></div>
-        </div>
-
-        <div id="connection-status" style="color: #00ff00; font-size: 0.9rem;">
-            <i class="fas fa-circle-check"></i> ROS NODE: ACTIVE
-        </div>
+        <div class="nav-progress-container"><div class="nav-progress-bar" id="p-bar"></div></div>
+        <div id="status-tag" style="color: #00ff00;"><i class="fas fa-circle-check"></i> CONNECTED</div>
     </div>
 
     <div class="map-viewport">
-        <img id="realtime-map" src="/api/map_feed" alt="Robot Map">
+        <img id="map-bg" src="/static/images/map2.jpg">
+
+        <div id="robot-marker" style="top: 50%; left: 10%;">
+            <div class="ping"></div>
+            <i class="fas fa-robot" style="font-size: 24px; position: relative;"></i>
+        </div>
 
         <div class="hud-overlay">
-            <div class="hud-item">
-                <i class="fas fa-arrows-to-dot"></i>
-                <span>พิกัด: <b id="pos-x">1.24</b>, <b id="pos-y">-0.85</b></span>
-            </div>
-            <div class="hud-item">
-                <i class="fas fa-gauge-high"></i>
-                <span>ความเร็ว: <b id="speed">0.22</b> m/s</span>
-            </div>
-            <div class="hud-item">
-                <i class="fas fa-battery-three-quarters"></i>
-                <span>แบตเตอรี่: <b id="battery">85</b>%</span>
-            </div>
-            <div class="hud-item" style="color: #00ff00;">
-                <i class="fas fa-robot"></i>
-                <span>สถานะ: <b>กำลังเคลื่อนที่</b></span>
-            </div>
+            <div style="margin-bottom:8px;"><i class="fas fa-arrows-to-dot" style="color:var(--udru-gold)"></i> X: <span id="pos-x">0.0</span> Y: <span id="pos-y">0.0</span></div>
+            <div><i class="fas fa-battery-half" style="color:var(--udru-gold)"></i> Battery: <span id="bat">--</span>%</div>
         </div>
     </div>
 
     <div class="controls">
-        <button class="btn btn-video" onclick="history.back()">
-            <i class="fas fa-video"></i> สลับไปดูวิดีโอ
-        </button>
-        <button class="btn btn-cancel" onclick="location.href='/room'">
-            <i class="fas fa-xmark"></i> ยกเลิกภารกิจ
-        </button>
-        <button class="btn" style="background: rgba(255,255,255,0.1); color: white;" onclick="location.href='/arrived?room={{room_id}}'">
-            <i class="fas fa-flag-checkered"></i> ทดสอบถึงที่หมาย
-        </button>
+        <button class="btn" style="background:var(--udru-gold)" onclick="history.back()"><i class="fas fa-video"></i> วิดีโอ</button>
+        <button class="btn" style="background:#ff5252; color:white;" onclick="location.href='/room'"><i class="fas fa-xmark"></i> ยกเลิก</button>
     </div>
 
+<script>
+    // อัปเดต NODE_POSITIONS ตามรูปวาดของคุณ
+const NODE_POSITIONS = {
+    1:  { top: 92, left: 15 }, // หน้า Elevator
+    2:  { top: 62, left: 25 }, // หน้า EN1301
+    3:  { top: 43, left: 25 }, // หน้า EN1302
+    4:  { top: 20, left: 40 }, // หน้า EN1303A
+    5:  { top: 8,  left: 40 }, // หน้า EN1303B
+    6:  { top: 8,  left: 55 }, // หน้า EN1304A
+    7:  { top: 20, left: 55 }, // หน้า EN1304B
+    8:  { top: 43, left: 78 }, // หน้า EN1305
+    9:  { top: 56, left: 78 }, // หน้า EN1306
+    10: { top: 68, left: 78 }, // หน้า EN1307
+    11: { top: 78, left: 78 }  // หน้า EN1308
+};
+
+// อัปเดต Mapping ห้องกับ Node
+const ROOM_TO_NODE = {
+    "1301": 2, "1302": 3, "1303A": 4, "1303B": 5, 
+    "1304A": 6, "1304B": 7, "1305": 8, "1306": 9, 
+    "1307": 10, "1308": 11, "Home": 1
+};
+
+    const ROBOT_IP = "172.83.9.108"; 
+    const targetRoom = "{{ room_id }}";
+
+    function updateMap() {
+        fetch(`http://${ROBOT_IP}:5000/status`)
+            .then(res => res.json())
+            .then(data => {
+                // 1. อัปเดตตำแหน่งหุ่นบนแผนที่
+                const node = data.current_location || 1;
+                if (NODE_POSITIONS[node]) {
+                    const marker = document.getElementById('robot-marker');
+                    marker.style.top = NODE_POSITIONS[node].top + "%";
+                    marker.style.left = NODE_POSITIONS[node].left + "%";
+                }
+
+                // 2. อัปเดต Telemetry
+                document.getElementById('pos-x').innerText = data.x.toFixed(2);
+                document.getElementById('pos-y').innerText = data.y.toFixed(2);
+                
+                // 3. อัปเดต Progress Bar (สมมติมี 11 node)
+                document.getElementById('p-bar').style.width = (node / 11 * 100) + "%";
+
+                // 4. เช็คว่าถึงที่หมายหรือยัง
+                if (!data.is_navigating && String(data.current_location) === "2") { // สมมติ 2 คือ 1301
+                     window.location.href = `/arrived?room=${targetRoom}`;
+                }
+            })
+            .catch(() => {
+                document.getElementById('status-tag').style.color = "red";
+                document.getElementById('status-tag').innerHTML = "DISCONNECTED";
+            });
+    }
+
+    setInterval(updateMap, 1000);
+</script>
 </body>
 </html>

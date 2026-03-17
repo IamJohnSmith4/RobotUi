@@ -7,6 +7,11 @@ import requests
 import threading # เพิ่มที่ด้านบนของไฟล์
 
 # --- [CONFIG & DATA] ---
+ROBOT_IP = "172.83.9.108"
+
+# เพิ่มตัวแปรเก็บตำแหน่งล่าสุดในฝั่ง Windows ด้วย (ถ้าต้องการ)
+last_known_node = 1 
+
 # ข้อมูลรายละเอียดแต่ละห้อง
 ROOM_DATA = {
     "1301": {
@@ -25,7 +30,7 @@ ROOM_DATA = {
         "dub": "ตอนนี้เราเดินทางมาถึงห้อง EN 1302 ห้องปฏิบัติการวงจรไฟฟ้าและอิเล็กทรอนิกส์แล้วครับ ห้องนี้ใช้สำหรับการเรียนรู้พื้นฐานวิศวกรรมไฟฟ้า และการวิเคราะห์วงจร โดยใช้เครื่องมือวัดที่ทันสมัย เพื่อเสริมสร้างความเข้าใจเชิงปฏิบัติให้กับนักศึกษาครับ"
     },
     
-    "1303a": {
+    "1303A": {
         "dept": "EL",
         "subjects": "งานธุรการ, งานทะเบียนสาขา, ติดต่อสอบถาม",
         "desc": "สำนักงานสาขาวิชาวิศวกรรมอิเล็กทรอนิกส์",
@@ -33,7 +38,7 @@ ROOM_DATA = {
         "dub": "ขณะนี้ถึงสำนักงานสาขาวิชาวิศวกรรมอิเล็กทรอนิกส์แล้วครับ หากต้องการติดต่อสอบถามเรื่องการเรียนหรือธุรการสาขา สามารถติดต่อได้ที่ห้องนี้ครับ"
     },
 
-    "1303b": {
+    "1303B": {
         "dept": "EL",
         "subjects": "ไมโครคอนโทรลเลอร์, ระบบสมองกลฝังตัว, ระบบอัดประจุยานยนต์ไฟฟ้า",
         "desc": "ศูนย์นวัตกรรมสมองกลและยานยนต์ไฟฟ้า",
@@ -41,7 +46,7 @@ ROOM_DATA = {
         "dub": "ยินดีต้อนรับสู่ห้อง EN 1303B ครับ ห้องนี้เป็นศูนย์นวัตกรรมด้านระบบสมองกลและยานยนต์ไฟฟ้า ใช้สำหรับการทดสอบระบบควบคุมมอเตอร์ และอุปกรณ์ไฟฟ้ากำลัง โดยนักศึกษาจะได้ลงมือปฏิบัติจริงกับชุดสาธิตและเครื่องมือวัดที่ได้มาตรฐานครับ"
     },
 
-    "1304a": {
+    "1304A": {
         "dept": "CCE",
         "subjects": "ไมโครคอนโทรลเลอร์, วงจรดิจิทัลและลอจิก, ระบบฐานข้อมูล, PLC, การสื่อสารข้อมูล",
         "desc": "ห้องปฏิบัติการเครือข่ายและการสื่อสาร",
@@ -49,7 +54,7 @@ ROOM_DATA = {
         "dub": "ยินดีต้อนรับสู่ห้อง EN 1304A ครับ ห้องปฏิบัติการเครือข่ายและการสื่อสาร ห้องนี้ใช้สำหรับการเรียนรู้ระบบเครือข่ายคอมพิวเตอร์ การรับส่งข้อมูล และเทคโนโลยีการสื่อสารไร้สาย เพื่อเตรียมความพร้อมสู่การเป็นผู้เชี่ยวชาญด้านไอทีในอนาคตครับ"
     },
 
-    "1304b": {
+    "1304B": {
         "dept": "CCE",
         "subjects": "การเขียนโปรแกรมเชิงวัตถุ, ระบบฐานข้อมูล, ปัญญาประดิษฐ์, Machine Learning",
         "desc": "ห้องปฏิบัติการคอมพิวเตอร์และปัญญาประดิษฐ์ (AI)",
@@ -92,6 +97,7 @@ ROOM_DATA = {
 
 # ใส่ไว้ใน app.py (Windows)
 ROOM_TO_NODE = {
+    "Home": 1,
     "1301": 2,  # ห้อง 1301 อยู่ที่จุดที่ 2
     "1302": 3,
     "1303A": 4,
@@ -179,40 +185,34 @@ def map_feed():
     return Response(generate_map_frame(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 
-@app.route('/stop', methods=['GET', 'POST'])
-def stop_robot():
-    global is_moving # ถ้าคุณมีตัวแปรควบคุมสถานะ
-    is_moving = False 
-    
-    # ส่งความเร็ว 0 ไปยัง ROS ทันที
-    stop_cmd = Twist()
-    velocity_publisher.publish(stop_cmd)
-    
-    print("[ROS] Robot STOPPED by User")
-    return jsonify({"status": "ok", "message": "Robot stopped"})
-
 @app.route('/api/move_to/<room_id>')
 def api_move_to(room_id):
-    node_id = ROOM_TO_NODE.get(room_id)
+    global last_known_node
+    rid = room_id.upper()
+    node_id = ROOM_TO_NODE.get(rid)
+    
     if not node_id:
-        return jsonify({"status": "error", "message": "Room not found"}), 404
+        return jsonify({"status": "error", "msg": "Room not found"}), 404
 
-    # ฟังก์ชันย่อยสำหรับส่งคำสั่ง (Background Task)
-    def send_command_to_ubuntu():
+    def call_robot():
+        global last_known_node
         try:
-            ROBOT_IP = "172.83.8.184" 
-            url = f"http://{ROBOT_IP}:5000/command"
-            requests.post(url, json={"start": 1, "target": node_id}, timeout=10)
-            print(f"Robot started moving to {room_id}")
-        except Exception as e:
-            print(f"Background Error: {e}")
+            # ส่งคำสั่งไปที่ Ubuntu
+            res = requests.post(f"http://{ROBOT_IP}:5000/command", 
+                                json={"start": last_known_node, "target": node_id}, timeout=5)
+            if res.status_code == 200: last_known_node = node_id
+        except Exception as e: print(f"Connection Error: {e}")
 
-    # สร้าง Thread ใหม่เพื่อส่งคำสั่ง แล้วปล่อยให้ Flask ไปทำงานต่อทันที
-    thread = threading.Thread(target=send_command_to_ubuntu)
-    thread.start()
+    threading.Thread(target=call_robot).start()
+    return jsonify({"status": "moving", "target_node": node_id})
 
-    # ตอบกลับทันทีเพื่อให้หน้าเว็บเปลี่ยนหน้าได้เลย ไม่ต้องรอหุ่นยนต์ขยับ
-    return jsonify({"status": "moving", "target": room_id})
+@app.route('/stop')
+def stop_robot():
+    try:
+        requests.get(f"http://{ROBOT_IP}:5000/stop", timeout=2)
+        return jsonify({"status": "ok"})
+    except:
+        return jsonify({"status": "error"}), 500
 
 # --- [MAIN RUN] ---
 if __name__ == '__main__':

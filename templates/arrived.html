@@ -51,12 +51,34 @@
         <button class="btn back-base-btn" onclick="returnToBase()">ส่งหุ่นกลับจุดเริ่ม</button>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         function returnToBase() {
-            alert("หุ่นยนต์กำลังเดินทางกลับจุดเริ่มต้น...");
-            // [COMMENT] fetch('/api/move_to/home')
-            location.href = '/';
-        }
+        // 1. แสดง Loading หรือแจ้งเตือนผู้ใช้
+        Swal.fire({
+            title: 'กำลังพากลับ...',
+            text: 'หุ่นยนต์กำลังเดินทางกลับจุดเริ่มต้น (ห้อง 1301/Home)',
+            icon: 'info',
+            showConfirmButton: false,
+            timer: 2000
+        });
+
+        // 2. ส่งคำสั่งไปที่ Flask (สมมติว่า Route คือ /move/1)
+        // หมายเหตุ: เปลี่ยน URL ให้ตรงกับ API ที่คุณใช้สั่งเดิน
+        fetch('/move/1') 
+            .then(response => {
+                if(response.ok) {
+                    // 3. เมื่อสั่งสำเร็จ ให้กลับไปหน้าแรกเพื่อให้คนอื่นใช้งานต่อ
+                    setTimeout(() => {
+                        location.href = '/';
+                    }, 1000);
+                }
+            })
+            .catch(err => {
+                console.error("Error returning to base:", err);
+                location.href = '/'; // กลับหน้าแรกแม้จะ error เพื่อไม่ให้ค้างหน้าเดิม
+            });
+    }
     </script>
 </body>
 </html>

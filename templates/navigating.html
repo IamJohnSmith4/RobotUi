@@ -240,7 +240,7 @@
              }).then((result) => {
                 if (result.isConfirmed) {
                 // --- ส่วนที่เพิ่มใหม่: สั่งหยุดหุ่นที่ Ubuntu จริงๆ ---
-                const ROBOT_IP = "192.168.1.46"; // IP ของ Ubuntu
+                const ROBOT_IP = "172.83.9.108"; // IP ของ Ubuntu
                 fetch(`http://${ROBOT_IP}:5000/stop`)
                     .then(() => {
                         window.location.href = '/room';
@@ -254,6 +254,33 @@
             }
         });
     }
+    // ฟังก์ชันเช็คสถานะทุกๆ 3 วินาที
+        function checkArrival() {
+        // ดึง room_id จาก Jinja2 มาเตรียมไว้
+        const targetRoom = "{{ room_id }}";
+        
+        // แก้ไข IP ให้ตรงกับเครื่องที่เก็บสถานะ (ปกติควรเป็น IP ของ Flask Server)
+        fetch(`http://172.83.9.123:5000/status`)
+            .then(response => response.json())
+            .then(data => {
+                console.log("Current Status:", data); // ดูค่าที่ส่งกลับมาเพื่อ Debug
+
+                // เงื่อนไข: 
+                // 1. หุ่นหยุดวิ่งแล้ว (is_navigating เป็น false)
+                // 2. ตำแหน่งปัจจุบัน (current_location) ตรงกับเป้าหมาย
+                // *สมมติว่าห้อง 1301 มี ID คือ 1301 หรือคุณอาจจะเช็คจากชื่อห้องโดยตรง*
+                if (data.is_navigating === false && String(data.current_location) === String(targetRoom)) {
+                    console.log("Arrived! Redirecting...");
+                    window.location.href = `/arrived?room=${targetRoom}`;
+                }
+            })
+            .catch(err => console.error("Check arrival error:", err));
+    }
+
+    // เริ่มเช็คหลังจากโหลดหน้าจอ (อาจจะหน่วงเวลาสักนิดเพื่อให้หุ่นเริ่มขยับก่อน)
+    setTimeout(() => {
+        setInterval(checkArrival, 3000);
+    }, 5000);
     </script>
 </body>
 </html>
