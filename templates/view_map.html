@@ -2,175 +2,574 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UDRU CCE - Realtime Mapping</title>
-    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>แผนที่ — ห้อง {{ room_id }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700&family=Orbitron:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+
     <style>
-        :root { 
-            --udru-blue: #004a99; --udru-gold: #ffcc00; 
-            --cce-cyan: #00e5ff; --bg-dark: #050c1a;
-        }
-        
-        body {
-            margin: 0; background: var(--bg-dark); color: white; font-family: 'Kanit', sans-serif;
-            display: flex; flex-direction: column; height: 100vh; overflow: hidden;
+        :root {
+            --cyan:   #00E5FF;
+            --gold:   #FFCC00;
+            --green:  #00FF88;
+            --red:    #FF5252;
+            --black:  #000000;
+            --card:   #0D1526;
+            --border: rgba(0,229,255,0.15);
+            --muted:  rgba(255,255,255,0.45);
+            --ease:   cubic-bezier(0.16,1,0.3,1);
         }
 
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; touch-action: manipulation; user-select: none; }
+
+        html, body {
+            width: 100%; height: 100%;
+            background: #000000 !important;
+            color: #fff; font-family: 'Exo 2', sans-serif;
+            overflow: hidden; color-scheme: dark;
+        }
+
+        /* พื้นหลัง grid */
+        .grid {
+            position: fixed; inset: 0; z-index: 0; pointer-events: none;
+            background-image: linear-gradient(rgba(0,229,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(0,229,255,0.025) 1px, transparent 1px);
+            background-size: 48px 48px;
+        }
+
+        /* Layout */
+        .page {
+            position: fixed; inset: 0; z-index: 10;
+            display: flex; flex-direction: column;
+            padding: clamp(12px, 2vw, 20px);
+            gap: clamp(8px, 1.5vh, 14px);
+            overflow: hidden;
+        }
+
+        /* Header */
         .header {
-            padding: 15px 25px; background: rgba(10, 25, 47, 0.9);
-            border-bottom: 1px solid rgba(0, 229, 255, 0.2);
-            display: flex; justify-content: space-between; align-items: center;
+            display: flex; align-items: center; gap: 12px; flex-shrink: 0;
         }
+        .back-btn {
+            display: flex; align-items: center; gap: 8px;
+            padding: 8px 16px; min-height: 44px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--border); border-radius: 100px;
+            color: var(--muted); font-family: 'Exo 2', sans-serif;
+            font-size: 0.85rem; font-weight: 500;
+            cursor: pointer; text-decoration: none;
+            transition: all 0.2s var(--ease);
+        }
+        .back-btn:hover { background: rgba(0,229,255,0.08); color: var(--cyan); border-color: rgba(0,229,255,.3); }
 
-        .nav-progress-container { width: 40%; background: rgba(255,255,255,0.1); height: 8px; border-radius: 10px; overflow: hidden; }
-        .nav-progress-bar { width: 0%; background: linear-gradient(90deg, var(--udru-blue), var(--cce-cyan)); height: 100%; transition: 1s; }
+        .page-title {
+            font-family: 'Orbitron', monospace;
+            font-size: clamp(0.9rem, 2.2vw, 1.4rem);
+            font-weight: 700; letter-spacing: 2px;
+            flex: 1; text-align: center;
+        }
+        .page-title span { color: var(--gold); text-shadow: 0 0 10px rgba(255,204,0,0.3); }
 
-        /* แผนที่แบบ Static แต่ขยับ Marker */
-        .map-viewport {
-            flex-grow: 1; position: relative; margin: 15px;
-            background: #000; border-radius: 20px;
-            border: 2px solid rgba(0, 229, 255, 0.3);
+        /* Status bar */
+        .status-bar {
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            padding: 8px 16px; min-height: 40px;
+            background: rgba(0,229,255,0.04);
+            border: 1px solid var(--border); border-radius: 10px;
+            font-size: clamp(0.75rem, 1.5vw, 0.85rem);
+            color: var(--cyan); flex-shrink: 0;
+        }
+        .live-dot {
+            width: 7px; height: 7px; border-radius: 50%;
+            background: var(--green); box-shadow: 0 0 6px var(--green);
+            flex-shrink: 0; animation: ldp 1.5s ease-in-out infinite;
+        }
+        @keyframes ldp { 0%,100%{opacity:1} 50%{opacity:.2} }
+
+        /* Map container */
+        .map-wrap {
+            flex: 1; min-height: 0;
+            background: rgba(13,21,38,0.7);
+            border: 2px solid var(--border);
+            border-radius: 16px;
             overflow: hidden;
             display: flex; align-items: center; justify-content: center;
+            position: relative;
         }
 
-        #map-bg {
+        /* SVG map */
+        #floor-map {
+            width: 100%; height: 100%;
             max-width: 100%; max-height: 100%;
-            opacity: 0.7; /* ให้แผนที่ดูจางลงเพื่อให้หุ่นเด่นขึ้น */
         }
 
-        /* หุ่นยนต์ Marker */
+        /* ห้องใน SVG */
+        .room {
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .room:hover .room-fill { opacity: 0.9; }
+        .room:active .room-fill { opacity: 0.7; }
+
+        /* Robot marker */
         #robot-marker {
-            position: absolute;
-            width: 40px; height: 40px;
-            color: var(--cce-cyan);
-            display: flex; justify-content: center; align-items: center;
-            transition: all 1s ease-in-out; /* ทำให้หุ่นเดินนุ่มนวล */
-            z-index: 10;
+            transition: all 1.2s var(--ease);
         }
 
-        .ping {
-            position: absolute; width: 100%; height: 100%;
-            border: 2px solid var(--cce-cyan); border-radius: 50%;
-            animation: radar 2s infinite;
+        /* Legend */
+        .legend {
+            display: flex; gap: clamp(10px,2vw,20px);
+            justify-content: center; align-items: center;
+            flex-wrap: wrap; flex-shrink: 0;
         }
+        .legend-item { display: flex; align-items: center; gap: 6px; font-size: clamp(0.62rem,1.2vw,0.72rem); color: var(--muted); }
+        .legend-dot { width: 10px; height: 10px; border-radius: 3px; }
 
-        @keyframes radar {
-            0% { transform: scale(1); opacity: 1; }
-            100% { transform: scale(3); opacity: 0; }
-        }
-
-        .hud-overlay {
-            position: absolute; top: 20px; left: 20px;
-            background: rgba(10, 25, 47, 0.85);
-            padding: 15px; border-radius: 15px;
-            border-left: 4px solid var(--cce-cyan);
-            backdrop-filter: blur(10px); z-index: 5;
-        }
-
+        /* Controls */
         .controls {
-            padding: 20px; background: rgba(10, 25, 47, 0.9);
-            display: flex; gap: 20px; justify-content: center;
+            display: flex; gap: 10px; justify-content: center; flex-shrink: 0;
         }
-
         .btn {
-            padding: 12px 30px; border-radius: 12px; border: none; font-family: 'Kanit';
-            cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 10px;
-            transition: 0.3s;
+            display: flex; align-items: center; gap: 8px;
+            padding: 10px 20px; min-height: 44px;
+            border-radius: 100px; cursor: pointer;
+            font-family: 'Exo 2', sans-serif;
+            font-size: clamp(0.8rem,1.6vw,0.9rem); font-weight: 600;
+            border: 2px solid transparent; transition: all 0.2s var(--ease);
+            text-decoration: none;
+        }
+        .btn-back { background: rgba(0,229,255,0.06); border-color: rgba(0,229,255,0.3); color: var(--cyan); }
+        .btn-back:hover { background: rgba(0,229,255,0.15); border-color: var(--cyan); }
+        .btn-cancel { background: rgba(255,82,82,0.08); border-color: rgba(255,82,82,0.4); color: #ff8a80; }
+        .btn-cancel:hover { background: rgba(255,82,82,0.18); border-color: var(--red); }
+        .btn:active { transform: scale(0.95); }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; }
         }
     </style>
 </head>
 <body>
+    <div class="grid"></div>
 
-    <div class="header">
-        <div>
-            <span style="opacity: 0.6; font-size: 0.8rem;">จุดหมาย:</span>
-            <div style="font-size: 1.4rem; font-weight: 600; color: var(--udru-gold);">
-                <i class="fas fa-location-dot"></i> ห้อง {{ room_id }}
+    <div class="page">
+
+        <!-- Header -->
+        <header class="header">
+            <a href="/navigate/{{ room_id }}" class="back-btn">
+                <i class="fas fa-arrow-left"></i>
+                <span>กลับ</span>
+            </a>
+            <h1 class="page-title">
+                แผนที่ EN ชั้น 13 — <span>ห้อง {{ room_id }}</span>
+            </h1>
+        </header>
+
+        <!-- Status -->
+        <div class="status-bar" id="status-bar" role="status" aria-live="polite">
+            <div class="live-dot" id="live-dot"></div>
+            <span id="status-text">กำลังติดตามตำแหน่งหุ่นยนต์...</span>
+        </div>
+
+        <!-- Map -->
+        <div class="map-wrap">
+            <svg id="floor-map" viewBox="0 0 480 620" xmlns="http://www.w3.org/2000/svg">
+
+                <!-- ── พื้นหลัง ── -->
+                <rect x="0" y="0" width="480" height="620" fill="#070f1c"/>
+
+                <!-- โถงทางเดินหลัก (corridor กลาง) -->
+                <rect x="110" y="0" width="260" height="620" fill="#0c1828" opacity="0.7"/>
+
+                <!-- ── ห้องฝั่งซ้าย ── -->
+
+                <!-- EN1303B (บนซ้าย) -->
+                <g class="room" onclick="highlightRoom('1303B')">
+                    <rect class="room-fill" id="room-1303B" x="2" y="2" width="108" height="95" rx="4" fill="#0a1525" stroke="#FF3D00" stroke-width="1.5" stroke-opacity="0.5"/>
+                    <text x="56" y="42" text-anchor="middle" font-family="Orbitron,monospace" font-size="10" font-weight="600" fill="#FF3D00" opacity="0.9">EN1303B</text>
+                    <text x="56" y="58" text-anchor="middle" font-family="Exo 2,sans-serif" font-size="8" fill="#ffffff" opacity="0.5">EL Innovation</text>
+                    <path d="M75,97 Q88,110 110,97" fill="none" stroke="#FF3D00" stroke-width="1" opacity="0.5"/>
+                </g>
+
+                <!-- EN1303A (ซ้ายกลางบน) -->
+                <g class="room" onclick="highlightRoom('1303A')">
+                    <rect class="room-fill" id="room-1303A" x="2" y="99" width="108" height="95" rx="4" fill="#0a1525" stroke="#00FF88" stroke-width="1.5" stroke-opacity="0.5"/>
+                    <text x="56" y="139" text-anchor="middle" font-family="Orbitron,monospace" font-size="10" font-weight="600" fill="#00FF88" opacity="0.9">EN1303A</text>
+                    <text x="56" y="155" text-anchor="middle" font-family="Exo 2,sans-serif" font-size="8" fill="#ffffff" opacity="0.5">Office EL</text>
+                    <path d="M75,194 Q88,207 110,194" fill="none" stroke="#00FF88" stroke-width="1" opacity="0.5"/>
+                </g>
+
+                <!-- EN1302 (ซ้ายกลาง) -->
+                <g class="room" onclick="highlightRoom('1302')">
+                    <rect class="room-fill" id="room-1302" x="2" y="230" width="108" height="110" rx="4" fill="#0a1525" stroke="#FF3D00" stroke-width="1.5" stroke-opacity="0.5"/>
+                    <text x="56" y="278" text-anchor="middle" font-family="Orbitron,monospace" font-size="11" font-weight="600" fill="#FF3D00" opacity="0.9">EN1302</text>
+                    <text x="56" y="295" text-anchor="middle" font-family="Exo 2,sans-serif" font-size="8" fill="#ffffff" opacity="0.5">EL Lab</text>
+                    <path d="M75,340 Q88,353 110,340" fill="none" stroke="#FF3D00" stroke-width="1" opacity="0.5"/>
+                </g>
+
+                <!-- EN1301 (ซ้ายล่าง) -->
+                <g class="room" onclick="highlightRoom('1301')">
+                    <rect class="room-fill" id="room-1301" x="2" y="342" width="108" height="110" rx="4" fill="#0a1525" stroke="#00E5FF" stroke-width="1.5" stroke-opacity="0.5"/>
+                    <text x="56" y="390" text-anchor="middle" font-family="Orbitron,monospace" font-size="11" font-weight="600" fill="#00E5FF" opacity="0.9">EN1301</text>
+                    <text x="56" y="407" text-anchor="middle" font-family="Exo 2,sans-serif" font-size="8" fill="#ffffff" opacity="0.5">CCE Lab</text>
+                    <path d="M75,452 Q88,465 110,452" fill="none" stroke="#00E5FF" stroke-width="1" opacity="0.5"/>
+                </g>
+
+                <!-- Toilet (ซ้ายล่างสุด) -->
+                <rect x="2" y="454" width="50" height="60" rx="3" fill="#080e1c" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+                <text x="27" y="478" text-anchor="middle" font-family="Exo 2,sans-serif" font-size="7" fill="#ffffff" opacity="0.35">Female</text>
+                <text x="27" y="490" text-anchor="middle" font-family="Exo 2,sans-serif" font-size="7" fill="#ffffff" opacity="0.35">Toilet</text>
+                <rect x="54" y="478" width="50" height="36" rx="3" fill="#080e1c" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+                <text x="79" y="499" text-anchor="middle" font-family="Exo 2,sans-serif" font-size="7" fill="#ffffff" opacity="0.35">Male</text>
+
+                <!-- Elevator (ซ้ายล่างสุด) -->
+                <rect x="2" y="540" width="75" height="60" rx="3" fill="#080e1c" stroke="rgba(255,255,255,0.2)" stroke-width="1.5"/>
+                <text x="39" y="565" text-anchor="middle" font-family="Exo 2,sans-serif" font-size="8" fill="#ffffff" opacity="0.5">Elevator</text>
+                <text x="39" y="580" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#ffffff" opacity="0.3">⇅</text>
+
+                <!-- ── ห้องบนกลาง ── -->
+
+                <!-- EN1303B node 5 side (ซ้าย) / EN1304A node 6 (ขวา) -->
+                <!-- EN1304A (บนขวา) -->
+                <g class="room" onclick="highlightRoom('1304A')">
+                    <rect class="room-fill" id="room-1304A" x="370" y="2" width="108" height="95" rx="4" fill="#0a1525" stroke="#00E5FF" stroke-width="1.5" stroke-opacity="0.5"/>
+                    <text x="424" y="42" text-anchor="middle" font-family="Orbitron,monospace" font-size="10" font-weight="600" fill="#00E5FF" opacity="0.9">EN1304A</text>
+                    <text x="424" y="58" text-anchor="middle" font-family="Exo 2,sans-serif" font-size="8" fill="#ffffff" opacity="0.5">Network Lab</text>
+                    <path d="M370,65 Q357,78 370,90" fill="none" stroke="#00E5FF" stroke-width="1" opacity="0.5"/>
+                </g>
+
+                <!-- EN1304B (ขวากลางบน) -->
+                <g class="room" onclick="highlightRoom('1304B')">
+                    <rect class="room-fill" id="room-1304B" x="370" y="99" width="108" height="95" rx="4" fill="#0a1525" stroke="#00E5FF" stroke-width="1.5" stroke-opacity="0.5"/>
+                    <text x="424" y="139" text-anchor="middle" font-family="Orbitron,monospace" font-size="10" font-weight="600" fill="#00E5FF" opacity="0.9">EN1304B</text>
+                    <text x="424" y="155" text-anchor="middle" font-family="Exo 2,sans-serif" font-size="8" fill="#ffffff" opacity="0.5">AI Lab</text>
+                    <path d="M370,155 Q357,168 370,180" fill="none" stroke="#00E5FF" stroke-width="1" opacity="0.5"/>
+                </g>
+
+                <!-- ── ห้องฝั่งขวา ── -->
+
+                <!-- EN1305 (ขวาบน) -->
+                <g class="room" onclick="highlightRoom('1305')">
+                    <rect class="room-fill" id="room-1305" x="370" y="220" width="108" height="95" rx="4" fill="#0a1525" stroke="#00E5FF" stroke-width="1.5" stroke-opacity="0.5"/>
+                    <text x="424" y="260" text-anchor="middle" font-family="Orbitron,monospace" font-size="11" font-weight="600" fill="#00E5FF" opacity="0.9">EN1305</text>
+                    <text x="424" y="277" text-anchor="middle" font-family="Exo 2,sans-serif" font-size="8" fill="#ffffff" opacity="0.5">Wireless Lab</text>
+                    <path d="M370,255 Q357,268 370,280" fill="none" stroke="#00E5FF" stroke-width="1" opacity="0.5"/>
+                </g>
+
+                <!-- EN1306 (ขวากลาง) -->
+                <g class="room" onclick="highlightRoom('1306')">
+                    <rect class="room-fill" id="room-1306" x="370" y="317" width="108" height="90" rx="4" fill="#0a1525" stroke="#00FF88" stroke-width="1.5" stroke-opacity="0.5"/>
+                    <text x="424" y="355" text-anchor="middle" font-family="Orbitron,monospace" font-size="11" font-weight="600" fill="#00FF88" opacity="0.9">EN1306</text>
+                    <text x="424" y="372" text-anchor="middle" font-family="Exo 2,sans-serif" font-size="8" fill="#ffffff" opacity="0.5">อาจารย์ CCE</text>
+                    <path d="M370,340 Q357,353 370,366" fill="none" stroke="#00FF88" stroke-width="1" opacity="0.5"/>
+                </g>
+
+                <!-- EN1307 (ขวาล่าง) -->
+                <g class="room" onclick="highlightRoom('1307')">
+                    <rect class="room-fill" id="room-1307" x="370" y="409" width="108" height="90" rx="4" fill="#0a1525" stroke="#FF3D00" stroke-width="1.5" stroke-opacity="0.5"/>
+                    <text x="424" y="447" text-anchor="middle" font-family="Orbitron,monospace" font-size="11" font-weight="600" fill="#FF3D00" opacity="0.9">EN1307</text>
+                    <text x="424" y="464" text-anchor="middle" font-family="Exo 2,sans-serif" font-size="8" fill="#ffffff" opacity="0.5">Robot Lab</text>
+                    <path d="M370,432 Q357,445 370,458" fill="none" stroke="#FF3D00" stroke-width="1" opacity="0.5"/>
+                </g>
+
+                <!-- EN1308 (ขวาล่างสุด) -->
+                <g class="room" onclick="highlightRoom('1308')">
+                    <rect class="room-fill" id="room-1308" x="370" y="501" width="108" height="88" rx="4" fill="#0a1525" stroke="#FFCC00" stroke-width="1.5" stroke-opacity="0.5"/>
+                    <text x="424" y="538" text-anchor="middle" font-family="Orbitron,monospace" font-size="11" font-weight="600" fill="#FFCC00" opacity="0.9">EN1308</text>
+                    <text x="424" y="555" text-anchor="middle" font-family="Exo 2,sans-serif" font-size="8" fill="#ffffff" opacity="0.5">วัสดุอุปกรณ์</text>
+                    <path d="M370,524 Q357,537 370,550" fill="none" stroke="#FFCC00" stroke-width="1" opacity="0.5"/>
+                </g>
+
+                <!-- Stairs (ขวาล่างสุด) -->
+                <rect x="400" y="590" width="78" height="28" rx="3" fill="#080e1c" stroke="rgba(255,255,255,0.15)" stroke-width="1"/>
+                <text x="439" y="608" text-anchor="middle" font-family="Exo 2,sans-serif" font-size="8" fill="#ffffff" opacity="0.35">Stairs</text>
+
+                <!-- ── Balcony กลาง ── -->
+                <rect x="155" y="230" width="170" height="280" rx="5"
+                      fill="#0e1e10" stroke="rgba(180,140,80,0.3)" stroke-width="1.5"/>
+                <text x="240" y="375" text-anchor="middle" font-family="Exo 2,sans-serif" font-size="11" fill="rgba(180,140,80,0.4)">Balcony</text>
+
+                <!-- Pillars ล่าง -->
+                <rect x="148" y="600" width="18" height="18" rx="2" fill="#0d1526" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+                <rect x="314" y="600" width="18" height="18" rx="2" fill="#0d1526" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+                <text x="157" y="614" text-anchor="middle" font-family="Exo 2,sans-serif" font-size="6" fill="rgba(255,255,255,0.3)">P</text>
+                <text x="323" y="614" text-anchor="middle" font-family="Exo 2,sans-serif" font-size="6" fill="rgba(255,255,255,0.3)">P</text>
+
+                <!-- ── เส้นทางเดิน ── -->
+                <g fill="none" stroke="rgba(0,229,255,0.18)" stroke-width="1" stroke-dasharray="4 3">
+                    <!-- แนวตั้ง ซ้าย: 1→2→3 -->
+                    <line x1="145" y1="580" x2="145" y2="455"/>
+                    <line x1="145" y1="455" x2="145" y2="345"/>
+                    <line x1="145" y1="345" x2="145" y2="230"/>
+                    <!-- 3→4 ขึ้นบน -->
+                    <line x1="145" y1="230" x2="145" y2="145"/>
+                    <!-- 4→5 ซ้าย และ 4→6/7 ขวา -->
+                    <line x1="145" y1="145" x2="240" y2="145"/>
+                    <line x1="240" y1="145" x2="240" y2="50"/>
+                    <!-- แนวตั้ง ขวา: 8→9→10→11 -->
+                    <line x1="335" y1="267" x2="335" y2="360"/>
+                    <line x1="335" y1="360" x2="335" y2="454"/>
+                    <line x1="335" y1="454" x2="335" y2="545"/>
+                </g>
+
+                <!-- ── Node markers ── -->
+                <!-- Node 1: Home (ใกล้ elevator ล่างซ้าย) -->
+                <g id="node-1">
+                    <circle cx="145" cy="580" r="10" fill="#0d1830" stroke="rgba(255,255,255,0.35)" stroke-width="1.5"/>
+                    <text x="145" y="585" text-anchor="middle" font-family="Orbitron,monospace" font-size="8" fill="rgba(255,255,255,0.6)">1</text>
+                </g>
+                <!-- Node 2: หน้า EN1301 -->
+                <g id="node-2">
+                    <circle cx="145" cy="455" r="10" fill="#0d1830" stroke="rgba(0,229,255,0.5)" stroke-width="1.5"/>
+                    <text x="145" y="460" text-anchor="middle" font-family="Orbitron,monospace" font-size="8" fill="rgba(0,229,255,0.8)">2</text>
+                </g>
+                <!-- Node 3: หน้า EN1302 -->
+                <g id="node-3">
+                    <circle cx="145" cy="345" r="10" fill="#0d1830" stroke="rgba(0,229,255,0.5)" stroke-width="1.5"/>
+                    <text x="145" y="350" text-anchor="middle" font-family="Orbitron,monospace" font-size="8" fill="rgba(0,229,255,0.8)">3</text>
+                </g>
+                <!-- Node 4: แยกกลาง -->
+                <g id="node-4">
+                    <circle cx="145" cy="230" r="10" fill="#0d1830" stroke="rgba(0,229,255,0.5)" stroke-width="1.5"/>
+                    <text x="145" y="235" text-anchor="middle" font-family="Orbitron,monospace" font-size="8" fill="rgba(0,229,255,0.8)">4</text>
+                </g>
+                <!-- Node 5: หน้า EN1303A/B (ซ้าย) -->
+                <g id="node-5">
+                    <circle cx="240" cy="145" r="10" fill="#0d1830" stroke="rgba(0,229,255,0.5)" stroke-width="1.5"/>
+                    <text x="240" y="150" text-anchor="middle" font-family="Orbitron,monospace" font-size="8" fill="rgba(0,229,255,0.8)">5</text>
+                </g>
+                <!-- Node 6: หน้า EN1304A -->
+                <g id="node-6">
+                    <circle cx="240" cy="50" r="10" fill="#0d1830" stroke="rgba(0,229,255,0.5)" stroke-width="1.5"/>
+                    <text x="240" y="55" text-anchor="middle" font-family="Orbitron,monospace" font-size="8" fill="rgba(0,229,255,0.8)">6</text>
+                </g>
+                <!-- Node 7: หน้า EN1304B -->
+                <g id="node-7">
+                    <circle cx="240" cy="145" r="10" fill="#0d1830" stroke="rgba(0,229,255,0.5)" stroke-width="1.5"/>
+                    <text x="240" y="150" text-anchor="middle" font-family="Orbitron,monospace" font-size="8" fill="rgba(0,229,255,0.8)">7</text>
+                </g>
+                <!-- Node 8: หน้า EN1305 -->
+                <g id="node-8">
+                    <circle cx="335" cy="267" r="10" fill="#0d1830" stroke="rgba(0,229,255,0.5)" stroke-width="1.5"/>
+                    <text x="335" y="272" text-anchor="middle" font-family="Orbitron,monospace" font-size="8" fill="rgba(0,229,255,0.8)">8</text>
+                </g>
+                <!-- Node 9: หน้า EN1306 -->
+                <g id="node-9">
+                    <circle cx="335" cy="360" r="10" fill="#0d1830" stroke="rgba(0,229,255,0.5)" stroke-width="1.5"/>
+                    <text x="335" y="365" text-anchor="middle" font-family="Orbitron,monospace" font-size="8" fill="rgba(0,229,255,0.8)">9</text>
+                </g>
+                <!-- Node 10: หน้า EN1307 -->
+                <g id="node-10">
+                    <circle cx="335" cy="454" r="10" fill="#0d1830" stroke="rgba(0,229,255,0.5)" stroke-width="1.5"/>
+                    <text x="335" y="459" text-anchor="middle" font-family="Orbitron,monospace" font-size="8" fill="rgba(0,229,255,0.8)">10</text>
+                </g>
+                <!-- Node 11: หน้า EN1308 -->
+                <g id="node-11">
+                    <circle cx="335" cy="545" r="10" fill="#0d1830" stroke="rgba(0,229,255,0.5)" stroke-width="1.5"/>
+                    <text x="335" y="550" text-anchor="middle" font-family="Orbitron,monospace" font-size="8" fill="rgba(0,229,255,0.8)">11</text>
+                </g>
+
+                <!-- ── Robot marker (เริ่มที่ node 1) ── -->
+                <g id="robot-marker">
+                    <circle id="ping" cx="0" cy="0" r="10" fill="none" stroke="#00E5FF" stroke-width="1.5" opacity="0">
+                        <animate attributeName="r" from="10" to="24" dur="1.8s" repeatCount="indefinite"/>
+                        <animate attributeName="opacity" from="0.8" to="0" dur="1.8s" repeatCount="indefinite"/>
+                    </circle>
+                    <circle id="robot-dot" cx="0" cy="0" r="10" fill="#00E5FF" stroke="#000" stroke-width="1.5"/>
+                    <text id="robot-icon" x="0" y="4" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#000">🤖</text>
+                </g>
+
+                <!-- ── Target marker ── -->
+                <g id="target-marker" opacity="0">
+                    <circle cx="0" cy="0" r="14" fill="none" stroke="#FFCC00" stroke-width="2" stroke-dasharray="3 2">
+                        <animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="3s" repeatCount="indefinite" additive="sum"/>
+                    </circle>
+                    <circle cx="0" cy="0" r="4" fill="#FFCC00" opacity="0.8"/>
+                </g>
+
+            </svg>
+        </div>
+
+        <!-- Legend -->
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-dot" style="background:#00E5FF;opacity:0.7"></div>
+                <span>CCE</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background:#FF3D00;opacity:0.7"></div>
+                <span>EL</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background:#00FF88;opacity:0.7"></div>
+                <span>สำนักงาน/อาจารย์</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background:#FFCC00;opacity:0.7"></div>
+                <span>วัสดุอุปกรณ์</span>
+            </div>
+            <div class="legend-item" style="gap:6px">
+                <div style="width:10px;height:10px;border-radius:50%;background:#00E5FF;box-shadow:0 0 6px #00E5FF"></div>
+                <span>หุ่นยนต์</span>
+            </div>
+            <div class="legend-item" style="gap:6px">
+                <div style="width:10px;height:10px;border-radius:50%;border:2px solid #FFCC00"></div>
+                <span>เป้าหมาย</span>
             </div>
         </div>
-        <div class="nav-progress-container"><div class="nav-progress-bar" id="p-bar"></div></div>
-        <div id="status-tag" style="color: #00ff00;"><i class="fas fa-circle-check"></i> CONNECTED</div>
-    </div>
 
-    <div class="map-viewport">
-        <img id="map-bg" src="/static/images/map2.jpg">
-
-        <div id="robot-marker" style="top: 50%; left: 10%;">
-            <div class="ping"></div>
-            <i class="fas fa-robot" style="font-size: 24px; position: relative;"></i>
+        <!-- Controls -->
+        <div class="controls">
+            <a href="/navigate/{{ room_id }}" class="btn btn-back">
+                <i class="fas fa-video"></i>
+                วิดีโอ
+            </a>
+            <button class="btn btn-cancel" onclick="cancelNav()">
+                <i class="fas fa-xmark"></i>
+                ยกเลิก
+            </button>
         </div>
 
-        <div class="hud-overlay">
-            <div style="margin-bottom:8px;"><i class="fas fa-arrows-to-dot" style="color:var(--udru-gold)"></i> X: <span id="pos-x">0.0</span> Y: <span id="pos-y">0.0</span></div>
-            <div><i class="fas fa-battery-half" style="color:var(--udru-gold)"></i> Battery: <span id="bat">--</span>%</div>
-        </div>
     </div>
 
-    <div class="controls">
-        <button class="btn" style="background:var(--udru-gold)" onclick="history.back()"><i class="fas fa-video"></i> วิดีโอ</button>
-        <button class="btn" style="background:#ff5252; color:white;" onclick="location.href='/room'"><i class="fas fa-xmark"></i> ยกเลิก</button>
-    </div>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+    const ROOM_ID   = "{{ room_id }}";
+    const ROBOT_IP  = "172.83.9.108";
 
-<script>
-    // อัปเดต NODE_POSITIONS ตามรูปวาดของคุณ
-const NODE_POSITIONS = {
-    1:  { top: 92, left: 15 }, // หน้า Elevator
-    2:  { top: 62, left: 25 }, // หน้า EN1301
-    3:  { top: 43, left: 25 }, // หน้า EN1302
-    4:  { top: 20, left: 40 }, // หน้า EN1303A
-    5:  { top: 8,  left: 40 }, // หน้า EN1303B
-    6:  { top: 8,  left: 55 }, // หน้า EN1304A
-    7:  { top: 20, left: 55 }, // หน้า EN1304B
-    8:  { top: 43, left: 78 }, // หน้า EN1305
-    9:  { top: 56, left: 78 }, // หน้า EN1306
-    10: { top: 68, left: 78 }, // หน้า EN1307
-    11: { top: 78, left: 78 }  // หน้า EN1308
-};
+    /* ── ตำแหน่ง node แต่ละจุดบน SVG ── */
+    const NODE_POS = {
+        1:  { x: 145, y: 580 }, /* Home — ใกล้ elevator */
+        2:  { x: 145, y: 455 }, /* หน้า EN1301 */
+        3:  { x: 145, y: 345 }, /* หน้า EN1302 */
+        4:  { x: 145, y: 230 }, /* แยกกลาง */
+        5:  { x: 240, y: 145 }, /* หน้า EN1303A/B */
+        6:  { x: 240, y: 50  }, /* หน้า EN1304A */
+        7:  { x: 240, y: 145 }, /* หน้า EN1304B */
+        8:  { x: 335, y: 267 }, /* หน้า EN1305 */
+        9:  { x: 335, y: 360 }, /* หน้า EN1306 */
+        10: { x: 335, y: 454 }, /* หน้า EN1307 */
+        11: { x: 335, y: 545 }  /* หน้า EN1308 */
+    };
 
-// อัปเดต Mapping ห้องกับ Node
-const ROOM_TO_NODE = {
-    "1301": 2, "1302": 3, "1303A": 4, "1303B": 5, 
-    "1304A": 6, "1304B": 7, "1305": 8, "1306": 9, 
-    "1307": 10, "1308": 11, "Home": 1
-};
+    const ROOM_TO_NODE = {
+        "1301":2, "1302":3, "1303A":4, "1303B":5,
+        "1304A":6, "1304B":7, "1305":8, "1306":9,
+        "1307":10, "1308":11
+    };
 
-    const ROBOT_IP = "172.83.9.108"; 
-    const targetRoom = "{{ room_id }}";
+    const TARGET_NODE = ROOM_TO_NODE[ROOM_ID.toUpperCase()] || 0;
+
+    /* แสดง target marker ที่ห้องปลายทาง */
+    if (TARGET_NODE && NODE_POS[TARGET_NODE]) {
+        const tm = document.getElementById('target-marker');
+        const pos = NODE_POS[TARGET_NODE];
+        tm.setAttribute('transform', `translate(${pos.x},${pos.y})`);
+        tm.setAttribute('opacity', '1');
+        highlightTargetRoom();
+    }
+
+    /* ไฮไลท์ห้องปลายทาง */
+    function highlightTargetRoom() {
+        const roomEl = document.getElementById('room-' + ROOM_ID.toUpperCase());
+        if (roomEl) {
+            roomEl.setAttribute('stroke-opacity', '1');
+            roomEl.setAttribute('stroke-width', '2.5');
+            roomEl.setAttribute('fill', '#0d1e35');
+        }
+    }
+
+    /* ไฮไลท์ห้องที่แตะ */
+    function highlightRoom(id) {
+        document.querySelectorAll('.room-fill').forEach(r => {
+            r.setAttribute('stroke-opacity', '0.4');
+            r.setAttribute('stroke-width', '1.5');
+        });
+        const el = document.getElementById('room-' + id);
+        if (el) {
+            el.setAttribute('stroke-opacity', '1');
+            el.setAttribute('stroke-width', '2.5');
+        }
+    }
+
+    /* ── อัปเดตตำแหน่งหุ่นยนต์ ── */
+    function moveRobot(node) {
+        if (!NODE_POS[node]) return;
+        const pos = NODE_POS[node];
+        const marker = document.getElementById('robot-marker');
+        const dot    = document.getElementById('robot-dot');
+        const icon   = document.getElementById('robot-icon');
+        const ping   = document.getElementById('ping');
+
+        /* เลื่อน group ทั้งหมดไปตำแหน่งใหม่ */
+        marker.setAttribute('transform', `translate(${pos.x},${pos.y})`);
+
+        /* อัปเดต cx/cy ของ ping ด้วย */
+        ping.setAttribute('cx', 87);
+        ping.setAttribute('cy', 432);
+    }
+
+    /* ── Poll status ทุก 2 วิ ── */
+    let simNode = 1;
 
     function updateMap() {
-        fetch(`http://${ROBOT_IP}:5000/status`)
-            .then(res => res.json())
+        fetch('/api/status')
+            .then(r => { if (!r.ok) throw new Error(); return r.json(); })
             .then(data => {
-                // 1. อัปเดตตำแหน่งหุ่นบนแผนที่
-                const node = data.current_location || 1;
-                if (NODE_POSITIONS[node]) {
-                    const marker = document.getElementById('robot-marker');
-                    marker.style.top = NODE_POSITIONS[node].top + "%";
-                    marker.style.left = NODE_POSITIONS[node].left + "%";
-                }
+                /* รองรับทั้ง current_location และ current_node */
+                const node = data.current_location ?? data.current_node ?? 1;
+                moveRobot(node);
 
-                // 2. อัปเดต Telemetry
-                document.getElementById('pos-x').innerText = data.x.toFixed(2);
-                document.getElementById('pos-y').innerText = data.y.toFixed(2);
-                
-                // 3. อัปเดต Progress Bar (สมมติมี 11 node)
-                document.getElementById('p-bar').style.width = (node / 11 * 100) + "%";
-
-                // 4. เช็คว่าถึงที่หมายหรือยัง
-                if (!data.is_navigating && String(data.current_location) === "2") { // สมมติ 2 คือ 1301
-                     window.location.href = `/arrived?room=${targetRoom}`;
+                /* อัปเดต status text */
+                const statusText = document.getElementById('status-text');
+                if (data.is_navigating === false && String(node) === String(TARGET_NODE)) {
+                    statusText.textContent = '✓ หุ่นยนต์ถึงจุดหมายแล้ว';
+                    document.getElementById('live-dot').style.background = '#FFCC00';
+                    document.getElementById('live-dot').style.boxShadow  = '0 0 6px #FFCC00';
+                } else {
+                    statusText.textContent = `หุ่นยนต์อยู่ที่ node ${node} — กำลังมุ่งหน้าไปห้อง ${ROOM_ID}`;
                 }
             })
             .catch(() => {
-                document.getElementById('status-tag').style.color = "red";
-                document.getElementById('status-tag').innerHTML = "DISCONNECTED";
+                /* เชื่อมไม่ได้ — จำลองเดิน */
+                simulateMove();
+                document.getElementById('status-text').textContent = 'ไม่พบการเชื่อมต่อ — แสดงการจำลอง';
             });
     }
 
-    setInterval(updateMap, 1000);
-</script>
+    /* จำลองการเดินทีละ node */
+    function simulateMove() {
+        if (simNode < TARGET_NODE) {
+            simNode++;
+            moveRobot(simNode);
+        }
+    }
+
+    setInterval(updateMap, 2000);
+    updateMap(); // เรียกทันที
+
+    /* ── ยกเลิก ── */
+    function cancelNav() {
+        Swal.fire({
+            title: 'ยกเลิกการนำทาง?',
+            text: 'หุ่นยนต์จะหยุดการเคลื่อนที่',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#FF5252',
+            cancelButtonColor: '#00E5FF',
+            confirmButtonText: 'ยืนยัน',
+            cancelButtonText: 'กลับ',
+            background: '#0D1526', color: '#ffffff',
+            backdrop: 'rgba(0,0,0,0.8)',
+        }).then(r => {
+            if (r.isConfirmed) {
+                fetch('/stop').catch(() => {}).finally(() => {
+                    window.location.href = '/room';
+                });
+            }
+        });
+    }
+    </script>
 </body>
 </html>

@@ -1,10 +1,6 @@
-import cv2
-import numpy as np
-import time
 import threading
 from flask import Flask, render_template, Response, request, jsonify
 import requests
-import threading # เพิ่มที่ด้านบนของไฟล์
 
 # --- [CONFIG & DATA] ---
 ROBOT_IP = "172.83.9.108"
@@ -112,27 +108,6 @@ ROOM_TO_NODE = {
 
 app = Flask(__name__)
 # --- [ROS PREPARATION / MOCK DATA] ---
-latest_map_data = None 
-
-def generate_map_frame():
-    """ฟังก์ชันจำลองแผนที่สำหรับการ Feed ไปยังหน้า UI"""
-    while True:
-        if latest_map_data is not None:
-            img = latest_map_data.copy()
-        else:
-            img = np.zeros((500, 500, 3), dtype=np.uint8)
-            for i in range(0, 500, 50):
-                cv2.line(img, (i, 0), (i, 500), (40, 40, 40), 1)
-                cv2.line(img, (0, i), (500, i), (40, 40, 40), 1)
-            t = time.time()
-            x, y = int(250 + 80*np.cos(t*0.4)), int(250 + 80*np.sin(t*0.4))
-            cv2.circle(img, (x, y), 12, (0, 229, 255), -1) 
-            cv2.putText(img, "UDRU ROBOT", (x+15, y+5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 229, 255), 1)
-
-        ret, buffer = cv2.imencode('.jpg', img)
-        frame = buffer.tobytes()
-        yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
 # --- [PAGES ROUTES] ---
 
@@ -149,72 +124,96 @@ def view_map():
     room_id = request.args.get('room', '...')
     return render_template('view_map.html', room_id=room_id)
 
+# app.py — แก้ route /arrived ให้ส่ง room_info ไปด้วย
 @app.route('/arrived')
 def arrived():
     room_id = request.args.get('room', '...')
-    return render_template('arrived.html', room_id=room_id)
+    info = ROOM_DATA.get(room_id.upper(), {})
+    return render_template('arrived.html', room_id=room_id, room_info=info)
 
 # แก้ไขฟังก์ชันนำทาง: รวม navigatng และ navigate เข้าด้วยกันเพื่อลดความซับซ้อน
 @app.route('/navigate/<room_id>')
 def navigate_to_room(room_id):
-    """ฟังก์ชันหลักในการแสดงหน้าจอนำทาง พร้อมวิดีโอและข้อมูลห้อง"""
-    # 1. ดึงข้อมูลจาก ROOM_DATA
-    info = ROOM_DATA.get(room_id, {
-        "subjects": "ไม่ระบุวิชาเรียน", 
+    # ✅ เพิ่ม .upper() ก่อน lookup
+    info = ROOM_DATA.get(room_id.upper(), {
+        "subjects": "ไม่ระบุวิชาเรียน",
         "desc": "ห้องปฏิบัติการ",
-        "dept": "CCE/EL"
+        "dept": "CCE/EL",
+        "youtube_id": None,
+        "dub": None
     })
-    
-    # 2. กำหนดชื่อไฟล์วิดีโอให้ตรงกับ roomId (เช่น EN1302.mp4)
-    video_filename = f"EN{room_id}.mp4" 
-    
-    # 3. ส่งข้อมูลไปยัง navigation.html
-    return render_template('navigating.html', 
-                           room_id=room_id, 
-                           video_file=video_filename, 
+
+    video_filename = f"EN{room_id.upper()}.mp4"
+
+    return render_template('navigating.html',
+                           room_id=room_id,  # ← ส่งตามเดิม ไม่ต้อง upper
+                           video_file=video_filename,
                            info=info)
-
 # --- [API ROUTES] ---
-
-@app.route('/api/ble_status')
-def ble_status():
-    return jsonify(get_latest_tags())
-
-@app.route('/api/map_feed')
-def map_feed():
-    return Response(generate_map_frame(), mimetype='multipart/x-mixed-replace; boundary=frame')
-
 
 @app.route('/api/move_to/<room_id>')
 def api_move_to(room_id):
     global last_known_node
     rid = room_id.upper()
     node_id = ROOM_TO_NODE.get(rid)
-    
+
     if not node_id:
         return jsonify({"status": "error", "msg": "Room not found"}), 404
 
     def call_robot():
         global last_known_node
         try:
-            # ส่งคำสั่งไปที่ Ubuntu
-            res = requests.post(f"http://{ROBOT_IP}:5000/command", 
-                                json={"start": last_known_node, "target": node_id}, timeout=5)
-            if res.status_code == 200: last_known_node = node_id
-        except Exception as e: print(f"Connection Error: {e}")
+            # ถาม Ubuntu ก่อนว่าตอนนี้อยู่ที่ไหน
+            # ป้องกันกรณี robot_server.py restart แล้ว last_known_node ไม่ตรง
+            try:
+                status_res = requests.get(f"http://{ROBOT_IP}:5000/status", timeout=2)
+                if status_res.status_code == 200:
+                    actual_node = status_res.json().get('current_location', last_known_node)
+                    last_known_node = int(actual_node)
+                    print(f"[SYNC] actual node from robot: {last_known_node}")
+            except:
+                print(f"[SYNC] Cannot reach robot, using last_known_node: {last_known_node}")
 
-    threading.Thread(target=call_robot).start()
+            # ส่งคำสั่งเดิน
+            res = requests.post(
+                f"http://{ROBOT_IP}:5000/command",
+                json={"start": last_known_node, "target": node_id},
+                timeout=5
+            )
+            if res.status_code == 200:
+                last_known_node = node_id
+                print(f"[ROBOT] Moving start={last_known_node} target={node_id}")
+        except Exception as e:
+            print(f"[ROBOT] Connection Error: {e}")
+
+    threading.Thread(target=call_robot, daemon=True).start()
     return jsonify({"status": "moving", "target_node": node_id})
 
 @app.route('/stop')
 def stop_robot():
     try:
         requests.get(f"http://{ROBOT_IP}:5000/stop", timeout=2)
-        return jsonify({"status": "ok"})
     except:
-        return jsonify({"status": "error"}), 500
+        pass  # ถ้าหุ่นไม่ตอบก็ไม่เป็นไร
+    # return 200 เสมอ ไม่ว่าหุ่นจะออนไลน์หรือไม่
+    return jsonify({"status": "ok"})
 
-# --- [MAIN RUN] ---
+@app.route('/api/status')
+def api_status():
+    """Proxy /status จาก Ubuntu มาให้ JS เรียกผ่าน Flask แทน
+       ป้องกัน CORS error เวลาเรียก Ubuntu ตรงๆ"""
+    try:
+        res = requests.get(f"http://{ROBOT_IP}:5000/status", timeout=3)
+        return jsonify(res.json())
+    except:
+        return jsonify({
+            "is_navigating": False,
+            "current_location": 1,
+            "x": 0, "y": 0
+        }), 200
+ 
+# app.py — เพิ่มตอนท้าย if __name__ == '__main__'
 if __name__ == '__main__':
-    # รัน Flask App บนพอร์ต 5000
+    print(f"[INFO] ROBOT_IP = {ROBOT_IP}")
+    print(f"[INFO] Flask starting on http://0.0.0.0:5000")
     app.run(debug=True, host='0.0.0.0', port=5000)
