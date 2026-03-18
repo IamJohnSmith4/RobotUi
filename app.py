@@ -200,18 +200,17 @@ def stop_robot():
 
 @app.route('/api/status')
 def api_status():
-    """Proxy /status จาก Ubuntu มาให้ JS เรียกผ่าน Flask แทน
-       ป้องกัน CORS error เวลาเรียก Ubuntu ตรงๆ"""
     try:
         res = requests.get(f"http://{ROBOT_IP}:5000/status", timeout=3)
         return jsonify(res.json())
     except:
+        # ส่ง robot_online: False บอก JS ว่าเชื่อมหุ่นไม่ได้
         return jsonify({
             "is_navigating": False,
             "current_location": 1,
+            "robot_online": False,  # ← key ใหม่
             "x": 0, "y": 0
         }), 200
- 
 # app.py — เพิ่มตอนท้าย if __name__ == '__main__'
 if __name__ == '__main__':
     print(f"[INFO] ROBOT_IP = {ROBOT_IP}")

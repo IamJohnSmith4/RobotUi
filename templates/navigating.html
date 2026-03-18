@@ -597,16 +597,22 @@
                 return res.json();
             })
             .then(data => {
-                /* เชื่อมได้ → หยุดจำลอง ใช้ข้อมูลจริงแทน */
+                /* ถ้า robot_online = false แปลว่า Flask เชื่อมหุ่นไม่ได้
+                   ให้ถือว่า offline → เริ่ม simulation แทน */
+                if (data.robot_online === false) {
+                    if (!isRobotOnline && !simInterval && !arrived) {
+                        startSimulation();
+                    }
+                    return;
+                }
+
+                /* เชื่อมหุ่นได้จริง → หยุดจำลอง ใช้ข้อมูลจริงแทน */
                 if (!isRobotOnline) {
                     isRobotOnline = true;
                     if (simInterval) { clearInterval(simInterval); simInterval = null; }
                     updateStatus('กำลังเคลื่อนที่อย่างระมัดระวัง...', 'green');
                 }
 
-                /* อัปเดต progress จาก node จริง
-                   รองรับทั้ง 2 key: current_location และ current_node
-                   เพราะ robot_server.py ส่งมาเป็น current_node */
                 const curNode = data.current_location ?? data.current_node ?? 0;
 
                 if (curNode && TARGET_NODE > 0) {
@@ -614,43 +620,50 @@
                     setProgress(pct);
                 }
 
-                /* เช็คว่าถึงที่หมายหรือยัง
-                   เงื่อนไข: หยุดเดินแล้ว AND อยู่ที่ node เป้าหมาย */
                 if (data.is_navigating === false &&
                     String(curNode) === String(TARGET_NODE)) {
                     onArrived();
                 }
             })
             .catch(() => {
-                /* เชื่อมไม่ได้ → เริ่มจำลองถ้ายังไม่ได้เริ่ม */
+                /* fetch ล้มเหมือนกัน → simulation */
                 if (!isRobotOnline && !simInterval && !arrived) {
                     startSimulation();
                 }
             });
     }
 
-    /* ── โหมด Simulation: จำลอง progress วิ่งขึ้นอัตโนมัติ ──────
-       วิ่งจาก 0 → 95% แบบช้าๆ (ไม่ถึง 100% เพราะไม่รู้ว่าถึงจริงหรือเปล่า)
-       ความเร็วขึ้นกับจำนวน node ของห้องที่เลือก
+    /* ── โหมด Simulation: จำลอง progress วิ่ง 0 → 100% แล้ว redirect ──
+       ใช้เมื่อเชื่อมหุ่นไม่ได้ — วิ่งช้าๆ ตามระยะห้อง แล้วไปหน้า arrived
     ──────────────────────────────────────────────────────────── */
     function startSimulation() {
-        if (simInterval) return; // ป้องกันเริ่มซ้ำ
-        updateStatus('กำลังเคลื่อนที่... (ไม่พบการเชื่อมต่อหุ่น)', 'cyan');
+        if (simInterval) return;
+        updateStatus('กำลังเคลื่อนที่... (โหมดจำลอง)', 'cyan');
 
-        /* คำนวณว่าควรวิ่งกี่ ms ต่อ 1% — ห้องไกล = ช้ากว่า */
+        /* ห้องไกล = ใช้เวลานานกว่า
+           node 2 = ~2.4 วิ, node 11 = ~13 วิ */
         const totalNodes   = TARGET_NODE || 6;
-        const msPerPercent = (totalNodes * 1200) / 95; // ~75ms ต่อ % สำหรับห้องกลาง
+        const msPerPercent = (totalNodes * 1200) / 100;
 
         simInterval = setInterval(() => {
             if (arrived) { clearInterval(simInterval); return; }
-            if (simPct < 95) {
-                simPct += 1;
-                setProgress(simPct);
-            } else {
-                /* ค้างที่ 95% รอให้เชื่อมได้หรือผู้ดูแลระบบยืนยัน */
+
+            simPct += 1;
+            setProgress(simPct);
+
+            if (simPct < 30) {
+                updateStatus('กำลังออกจากจุดเริ่มต้น...', 'cyan');
+            } else if (simPct < 70) {
+                updateStatus('กำลังเคลื่อนที่ไปยังจุดหมาย...', 'green');
+            } else if (simPct < 100) {
+                updateStatus('ใกล้ถึงจุดหมายแล้ว...', 'gold');
+            }
+
+            /* ถึง 100% → redirect ไปหน้า arrived */
+            if (simPct >= 100) {
                 clearInterval(simInterval);
                 simInterval = null;
-                updateStatus('รอยืนยันการถึงที่หมาย...', 'gold');
+                onArrived();
             }
         }, msPerPercent);
     }
