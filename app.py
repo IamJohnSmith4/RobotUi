@@ -1,5 +1,5 @@
 import threading
-from flask import Flask, render_template, Response, request, jsonify
+from flask import Flask, render_template, request, jsonify
 import requests
 
 # --- [CONFIG & DATA] ---
@@ -93,7 +93,7 @@ ROOM_DATA = {
 
 # ใส่ไว้ใน app.py (Windows)
 ROOM_TO_NODE = {
-    "Home": 1,
+    "HOME": 1,
     "1301": 2,  # ห้อง 1301 อยู่ที่จุดที่ 2
     "1302": 3,
     "1303A": 4,
@@ -143,11 +143,9 @@ def navigate_to_room(room_id):
         "dub": None
     })
 
-    video_filename = f"EN{room_id.upper()}.mp4"
 
     return render_template('navigating.html',
                            room_id=room_id,  # ← ส่งตามเดิม ไม่ต้อง upper
-                           video_file=video_filename,
                            info=info)
 # --- [API ROUTES] ---
 

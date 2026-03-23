@@ -573,8 +573,9 @@
 
     /* อัปเดต progress bar UI */
     function setProgress(pct, label) {
-        document.getElementById('progress-fill').style.width = pct + '%';
-        document.getElementById('progress-pct').textContent  = (label || pct) + '%';
+        const rounded = Math.round(pct);
+        document.getElementById('progress-fill').style.width = rounded + '%';
+        document.getElementById('progress-pct').textContent  = (label || rounded) + '%';
     }
 
     /* เรียกเมื่อถึงที่หมาย — หยุดทุกอย่างแล้ว redirect */
@@ -615,9 +616,11 @@
 
                 const curNode = data.current_location ?? data.current_node ?? 0;
 
-                if (curNode && TARGET_NODE > 0) {
-                    const pct = Math.min(Math.round((curNode / TARGET_NODE) * 100), 99);
-                    setProgress(pct);
+                /* อัปเดต progress จาก current_progress ที่ robot ส่งมา
+                   ค่านี้อัปเดตตาม cmd ที่กำลังทำอยู่ใน execute_path
+                   ป้องกัน progress กระโดดผิดเพราะ curNode ยังเป็น start node */
+                if (data.is_navigating === true && data.current_progress !== undefined) {
+                    setProgress(data.current_progress);
                 }
 
                 if (data.is_navigating === false &&

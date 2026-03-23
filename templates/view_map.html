@@ -298,15 +298,17 @@
 
                 <!-- ── เส้นทางเดิน ── -->
                 <g fill="none" stroke="rgba(0,229,255,0.18)" stroke-width="1" stroke-dasharray="4 3">
-                    <!-- แนวตั้ง ซ้าย: 1→2→3 -->
-                    <line x1="145" y1="580" x2="145" y2="455"/>
-                    <line x1="145" y1="455" x2="145" y2="345"/>
-                    <line x1="145" y1="345" x2="145" y2="230"/>
-                    <!-- 3→4 ขึ้นบน -->
-                    <line x1="145" y1="230" x2="145" y2="145"/>
-                    <!-- 4→5 ซ้าย และ 4→6/7 ขวา -->
-                    <line x1="145" y1="145" x2="240" y2="145"/>
-                    <line x1="240" y1="145" x2="240" y2="50"/>
+                    <!-- แนวตั้ง ซ้าย: 1→2→3→4→5 -->
+                    <line x1="145" y1="580" x2="145" y2="398"/>
+                    <line x1="145" y1="398" x2="145" y2="281"/>
+                    <line x1="145" y1="281" x2="145" y2="150"/>
+                    <line x1="145" y1="150" x2="145" y2="50"/>
+                    <!-- 5→6 แนวนอนบน -->
+                    <line x1="145" y1="50" x2="335" y2="50"/>
+                    <!-- 6→7 แนวตั้งขวาบน -->
+                    <line x1="335" y1="50" x2="335" y2="150"/>
+                    <!-- 7→8 ขวา -->
+                    <line x1="335" y1="150" x2="335" y2="267"/>
                     <!-- แนวตั้ง ขวา: 8→9→10→11 -->
                     <line x1="335" y1="267" x2="335" y2="360"/>
                     <line x1="335" y1="360" x2="335" y2="454"/>
@@ -321,33 +323,33 @@
                 </g>
                 <!-- Node 2: หน้า EN1301 -->
                 <g id="node-2">
-                    <circle cx="145" cy="455" r="10" fill="#0d1830" stroke="rgba(0,229,255,0.5)" stroke-width="1.5"/>
-                    <text x="145" y="460" text-anchor="middle" font-family="Orbitron,monospace" font-size="8" fill="rgba(0,229,255,0.8)">2</text>
+                    <circle cx="145" cy="398" r="10" fill="#0d1830" stroke="rgba(0,229,255,0.5)" stroke-width="1.5"/>
+                    <text x="145" y="403" text-anchor="middle" font-family="Orbitron,monospace" font-size="8" fill="rgba(0,229,255,0.8)">2</text>
                 </g>
                 <!-- Node 3: หน้า EN1302 -->
                 <g id="node-3">
-                    <circle cx="145" cy="345" r="10" fill="#0d1830" stroke="rgba(0,229,255,0.5)" stroke-width="1.5"/>
-                    <text x="145" y="350" text-anchor="middle" font-family="Orbitron,monospace" font-size="8" fill="rgba(0,229,255,0.8)">3</text>
+                    <circle cx="145" cy="281" r="10" fill="#0d1830" stroke="rgba(0,229,255,0.5)" stroke-width="1.5"/>
+                    <text x="145" y="286" text-anchor="middle" font-family="Orbitron,monospace" font-size="8" fill="rgba(0,229,255,0.8)">3</text>
                 </g>
                 <!-- Node 4: แยกกลาง -->
                 <g id="node-4">
-                    <circle cx="145" cy="230" r="10" fill="#0d1830" stroke="rgba(0,229,255,0.5)" stroke-width="1.5"/>
-                    <text x="145" y="235" text-anchor="middle" font-family="Orbitron,monospace" font-size="8" fill="rgba(0,229,255,0.8)">4</text>
+                    <circle cx="145" cy="150" r="10" fill="#0d1830" stroke="rgba(0,229,255,0.5)" stroke-width="1.5"/>
+                    <text x="145" y="155" text-anchor="middle" font-family="Orbitron,monospace" font-size="8" fill="rgba(0,229,255,0.8)">4</text>
                 </g>
                 <!-- Node 5: หน้า EN1303A/B (ซ้าย) -->
                 <g id="node-5">
-                    <circle cx="240" cy="145" r="10" fill="#0d1830" stroke="rgba(0,229,255,0.5)" stroke-width="1.5"/>
-                    <text x="240" y="150" text-anchor="middle" font-family="Orbitron,monospace" font-size="8" fill="rgba(0,229,255,0.8)">5</text>
+                    <circle cx="145" cy="50" r="10" fill="#0d1830" stroke="rgba(0,229,255,0.5)" stroke-width="1.5"/>
+                    <text x="145" y="55" text-anchor="middle" font-family="Orbitron,monospace" font-size="8" fill="rgba(0,229,255,0.8)">5</text>
                 </g>
                 <!-- Node 6: หน้า EN1304A -->
                 <g id="node-6">
-                    <circle cx="240" cy="50" r="10" fill="#0d1830" stroke="rgba(0,229,255,0.5)" stroke-width="1.5"/>
-                    <text x="240" y="55" text-anchor="middle" font-family="Orbitron,monospace" font-size="8" fill="rgba(0,229,255,0.8)">6</text>
+                    <circle cx="335" cy="50" r="10" fill="#0d1830" stroke="rgba(0,229,255,0.5)" stroke-width="1.5"/>
+                    <text x="335" y="55" text-anchor="middle" font-family="Orbitron,monospace" font-size="8" fill="rgba(0,229,255,0.8)">6</text>
                 </g>
                 <!-- Node 7: หน้า EN1304B -->
                 <g id="node-7">
-                    <circle cx="240" cy="145" r="10" fill="#0d1830" stroke="rgba(0,229,255,0.5)" stroke-width="1.5"/>
-                    <text x="240" y="150" text-anchor="middle" font-family="Orbitron,monospace" font-size="8" fill="rgba(0,229,255,0.8)">7</text>
+                    <circle cx="335" cy="150" r="10" fill="#0d1830" stroke="rgba(0,229,255,0.5)" stroke-width="1.5"/>
+                    <text x="335" y="155" text-anchor="middle" font-family="Orbitron,monospace" font-size="8" fill="rgba(0,229,255,0.8)">7</text>
                 </g>
                 <!-- Node 8: หน้า EN1305 -->
                 <g id="node-8">
@@ -436,17 +438,17 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
     const ROOM_ID   = "{{ room_id }}";
-    const ROBOT_IP  = "172.83.9.108";
+    const ROBOT_IP  = "172.83.9.123";
 
     /* ── ตำแหน่ง node แต่ละจุดบน SVG ── */
     const NODE_POS = {
         1:  { x: 145, y: 580 }, /* Home — ใกล้ elevator */
-        2:  { x: 145, y: 455 }, /* หน้า EN1301 */
-        3:  { x: 145, y: 345 }, /* หน้า EN1302 */
-        4:  { x: 145, y: 230 }, /* แยกกลาง */
-        5:  { x: 240, y: 145 }, /* หน้า EN1303A/B */
-        6:  { x: 240, y: 50  }, /* หน้า EN1304A */
-        7:  { x: 240, y: 145 }, /* หน้า EN1304B */
+        2:  { x: 145, y: 398 }, /* หน้า EN1301 */
+        3:  { x: 145, y: 281 }, /* หน้า EN1302 */
+        4:  { x: 145, y: 150 }, /* แยกกลาง */
+        5:  { x: 145, y: 50  }, /* หน้า EN1303A/B */
+        6:  { x: 335, y: 50  }, /* หน้า EN1304A */
+        7:  { x: 335, y: 150 }, /* หน้า EN1304B */
         8:  { x: 335, y: 267 }, /* หน้า EN1305 */
         9:  { x: 335, y: 360 }, /* หน้า EN1306 */
         10: { x: 335, y: 454 }, /* หน้า EN1307 */
@@ -505,6 +507,9 @@
         /* เลื่อน group ทั้งหมดไปตำแหน่งใหม่ */
         marker.setAttribute('transform', `translate(${pos.x},${pos.y})`);
 
+        /* อัปเดต cx/cy ของ ping ด้วย */
+        ping.setAttribute('cx', 87);
+        ping.setAttribute('cy', 432);
     }
 
     /* ── Poll status ทุก 2 วิ ── */
