@@ -217,11 +217,9 @@
                 </g>
 
                 <!-- Toilet (ซ้ายล่างสุด) -->
-                <rect x="2" y="454" width="50" height="60" rx="3" fill="#080e1c" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
-                <text x="27" y="478" text-anchor="middle" font-family="Exo 2,sans-serif" font-size="7" fill="#ffffff" opacity="0.35">Female</text>
-                <text x="27" y="490" text-anchor="middle" font-family="Exo 2,sans-serif" font-size="7" fill="#ffffff" opacity="0.35">Toilet</text>
-                <rect x="54" y="478" width="50" height="36" rx="3" fill="#080e1c" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
-                <text x="79" y="499" text-anchor="middle" font-family="Exo 2,sans-serif" font-size="7" fill="#ffffff" opacity="0.35">Male</text>
+                <rect x="2" y="454" width="102" height="60" rx="3" fill="#080e1c" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+                <text x="53" y="479" text-anchor="middle" font-family="Exo 2,sans-serif" font-size="9" fill="#ffffff" opacity="0.5">🚻</text>
+                <text x="53" y="496" text-anchor="middle" font-family="Exo 2,sans-serif" font-size="8" fill="#ffffff" opacity="0.35">Toilet</text>
 
                 <!-- Elevator (ซ้ายล่างสุด) -->
                 <rect x="2" y="540" width="75" height="60" rx="3" fill="#080e1c" stroke="rgba(255,255,255,0.2)" stroke-width="1.5"/>
@@ -495,41 +493,57 @@
         }
     }
 
-    /* ── อัปเดตตำแหน่งหุ่นยนต์ ── */
-    function moveRobot(node) {
-        if (!NODE_POS[node]) return;
-        const pos = NODE_POS[node];
+    /* ── อัปเดตตำแหน่งหุ่นยนต์ ──
+       รองรับ 2 แบบ:
+       1. moveRobot(node)           → ย้ายไป node นั้นเลย
+       2. moveRobot(from, to, pct)  → ขยับระหว่าง 2 node ตาม % (lerp)
+    ── */
+    function moveRobot(fromNode, toNode, pct) {
+        if (!NODE_POS[fromNode]) return;
         const marker = document.getElementById('robot-marker');
-        const dot    = document.getElementById('robot-dot');
-        const icon   = document.getElementById('robot-icon');
-        const ping   = document.getElementById('ping');
 
-        /* เลื่อน group ทั้งหมดไปตำแหน่งใหม่ */
-        marker.setAttribute('transform', `translate(${pos.x},${pos.y})`);
+        let x, y;
+        if (toNode !== undefined && pct !== undefined && NODE_POS[toNode]) {
+            /* lerp — ขยับตาม progress ระหว่าง 2 node */
+            const t = Math.min(Math.max(pct / 100, 0), 1);
+            x = NODE_POS[fromNode].x + (NODE_POS[toNode].x - NODE_POS[fromNode].x) * t;
+            y = NODE_POS[fromNode].y + (NODE_POS[toNode].y - NODE_POS[fromNode].y) * t;
+        } else {
+            /* ย้ายไป node ตรงๆ */
+            x = NODE_POS[fromNode].x;
+            y = NODE_POS[fromNode].y;
+        }
 
-        /* อัปเดต cx/cy ของ ping ด้วย */
-        ping.setAttribute('cx', 87);
-        ping.setAttribute('cy', 432);
+        marker.setAttribute('transform', `translate(${x},${y})`);
     }
 
     /* ── Poll status ทุก 2 วิ ── */
     let simNode = 1;
+    let simPct  = 0;
 
     function updateMap() {
         fetch('/api/status')
             .then(r => { if (!r.ok) throw new Error(); return r.json(); })
             .then(data => {
-                /* รองรับทั้ง current_location และ current_node */
-                const node = data.current_location ?? data.current_node ?? 1;
-                moveRobot(node);
-
-                /* อัปเดต status text */
+                const node     = data.current_location ?? data.current_node ?? 1;
+                const progress = data.current_progress ?? 0;
                 const statusText = document.getElementById('status-text');
-                if (data.is_navigating === false && String(node) === String(TARGET_NODE)) {
+
+                if (data.is_navigating === true && TARGET_NODE && NODE_POS[TARGET_NODE]) {
+                    /* กำลังเดิน → lerp ระหว่าง node ปัจจุบัน → target */
+                    moveRobot(node, TARGET_NODE, progress);
+                    statusText.textContent = `หุ่นยนต์กำลังเดิน ${progress}% — มุ่งหน้าห้อง ${ROOM_ID}`;
+                    document.getElementById('live-dot').style.background = '#00FF88';
+                    document.getElementById('live-dot').style.boxShadow  = '0 0 6px #00FF88';
+                } else if (data.is_navigating === false && String(node) === String(TARGET_NODE)) {
+                    /* ถึงที่หมายแล้ว */
+                    moveRobot(node);
                     statusText.textContent = '✓ หุ่นยนต์ถึงจุดหมายแล้ว';
                     document.getElementById('live-dot').style.background = '#FFCC00';
                     document.getElementById('live-dot').style.boxShadow  = '0 0 6px #FFCC00';
                 } else {
+                    /* หยุดอยู่ที่ node */
+                    moveRobot(node);
                     statusText.textContent = `หุ่นยนต์อยู่ที่ node ${node} — กำลังมุ่งหน้าไปห้อง ${ROOM_ID}`;
                 }
             })
@@ -540,12 +554,15 @@
             });
     }
 
-    /* จำลองการเดินทีละ node */
+    /* จำลองการเดิน — ขยับ % ทีละนิดแทนกระโดดทีละ node */
     function simulateMove() {
-        if (simNode < TARGET_NODE) {
-            simNode++;
-            moveRobot(simNode);
-        }
+        if (!TARGET_NODE) return;
+        simPct += 3;
+        if (simPct > 100) { simPct = 100; }
+        /* คำนวณ node ปัจจุบันจาก simPct */
+        const fromNode = Math.max(1, Math.floor(simNode));
+        moveRobot(fromNode, TARGET_NODE, simPct);
+        if (simPct >= 100) { simNode = TARGET_NODE; }
     }
 
     setInterval(updateMap, 2000);
