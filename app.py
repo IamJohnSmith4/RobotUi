@@ -3,7 +3,7 @@ from flask import Flask, render_template, request, jsonify
 import requests
 
 # --- [CONFIG & DATA] ---
-ROBOT_IP = "172.83.9.108"
+ROBOT_IP = "172.83.9.204"
 
 # เพิ่มตัวแปรเก็บตำแหน่งล่าสุดในฝั่ง Windows ด้วย (ถ้าต้องการ)
 last_known_node = 1 
@@ -209,6 +209,19 @@ def api_status():
             "robot_online": False,  # ← key ใหม่
             "x": 0, "y": 0
         }), 200
+        
+# เพิ่มลงใน app.py บน Windows
+@app.route('/api/reset-home', methods=['POST'])
+def proxy_reset_home():
+    import requests
+    ROBOT_IP = "172.83.9.204" # ใส่ IP จริงของหุ่นยนต์คุณ
+    try:
+        # ส่งคำสั่งต่อไปยัง Ubuntu
+        response = requests.post(f"http://{ROBOT_IP}:5000/command/reset-home", timeout=5)
+        return response.json()
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+    
 # app.py — เพิ่มตอนท้าย if __name__ == '__main__'
 if __name__ == '__main__':
     print(f"[INFO] ROBOT_IP = {ROBOT_IP}")

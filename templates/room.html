@@ -373,6 +373,21 @@
         .legend-dot {
             width: 8px; height: 8px; border-radius: 50%;
         }
+        .reset-home-btn {
+            background: rgba(255, 165, 0, 0.1); /* สีส้มจางๆ */
+            border: 1px solid #ffa500;
+            color: #ffa500;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: 0.3s;
+    }
+
+        .reset-home-btn:hover {
+            background: #ffa500;
+            color: #000;
+            box-shadow: 0 0 15px #ffa500;
+    }
 
         /* ══════════════════════════════════════════════════════
            prefers-reduced-motion — ปิด animation ถ้าผู้ใช้ตั้งค่าไว้
@@ -400,22 +415,24 @@
 
         <!-- HEADER -->
         <header class="header">
-            <!-- ปุ่มกลับหน้าแรก -->
-            <a href="/" class="back-btn" aria-label="กลับหน้าหลัก">
-                <i class="fas fa-arrow-left" aria-hidden="true"></i>
-                <span>หน้าหลัก</span>
-            </a>
+    <a href="/" class="back-btn">
+        <i class="fas fa-arrow-left"></i> <span>หน้าหลัก</span>
+    </a>
 
-            <!-- ชื่อหน้า -->
-            <h1 class="page-title">
-                เลือก<span>ห้องปลายทาง</span>
-            </h1>
+    <h1 class="page-title">
+        เลือก<span>ห้องปลายทาง</span>
+    </h1>
 
-            <!-- ปุ่ม Fullscreen -->
-            <button class="fs-btn" onclick="toggleFS()" aria-label="เต็มจอ">
-                <i class="fas fa-expand" aria-hidden="true"></i>
-            </button>
-        </header>
+    <div class="control-group" style="display: flex; gap: 10px;">
+        <button class="reset-home-btn" onclick="triggerResetHome()" title="Reset Home Sequence">
+            <i class="fas fa-sync-alt"></i>
+        </button>
+
+        <button class="fs-btn" onclick="toggleFS()">
+            <i class="fas fa-expand"></i>
+        </button>
+    </div>
+</header>
 
         <!-- STATUS BAR — อัปเดตด้วย JavaScript ตอนเลือกห้อง -->
         <div class="status-bar" id="status-bar" role="status" aria-live="polite">
@@ -643,7 +660,24 @@
             document.exitFullscreen();
         }
     }
-
+    function triggerResetHome() {
+    if (confirm("คุณต้องการให้หุ่นยนต์เริ่ม Home Sequence (เซ็ตจุดเริ่มต้นใหม่) ใช่หรือไม่?")) {
+        fetch('/api/reset-home', { 
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert(data.message);
+            // เมื่อกดตกลง ให้ส่งกลับหน้าแรก (index) เพื่อรอรับคำสั่งใหม่
+            window.location.href = "/";
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert("ไม่สามารถติดต่อหุ่นยนต์ได้ กรุณาตรวจสอบการเชื่อมต่อ");
+        });
+    }
+}
     /* ════════════════════════════════════════════════════════════
        ป้องกัน pinch zoom บน touch screen (สำหรับ Kiosk)
     ════════════════════════════════════════════════════════════ */
