@@ -179,7 +179,7 @@ def api_move_to(room_id):
                 timeout=5
             )
             if res.status_code == 200:
-                last_known_node = node_id
+                # last_known_node = node_id
                 print(f"[ROBOT] Moving start={last_known_node} target={node_id}")
         except Exception as e:
             print(f"[ROBOT] Connection Error: {e}")
@@ -213,11 +213,11 @@ def api_status():
 # เพิ่มลงใน app.py บน Windows
 @app.route('/api/reset-home', methods=['POST'])
 def proxy_reset_home():
-    import requests
-    ROBOT_IP = "172.83.9.204" # ใส่ IP จริงของหุ่นยนต์คุณ
     try:
         # ส่งคำสั่งต่อไปยัง Ubuntu
         response = requests.post(f"http://{ROBOT_IP}:5000/command/reset-home", timeout=5)
+        last_known_node = 1 
+        print("[RESET] Windows state set to Node 1")
         return response.json()
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500

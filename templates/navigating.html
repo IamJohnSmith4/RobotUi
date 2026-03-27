@@ -366,6 +366,7 @@
                 </div>
                 <!-- YouTube player โหลดด้วย IFrame API -->
                 <div id="player"></div>
+                <script src="https://www.youtube.com/iframe_api"></script>
             {% else %}
                 <!-- ไม่มีวิดีโอ: แสดงไอคอนตาม room type -->
                 <div class="no-video" id="no-video-display">
@@ -455,7 +456,8 @@
 
     let player;       /* YouTube player object */
     let hasSpoken = false; /* lock ป้องกันพูดซ้ำ */
-
+    let isVideoStarted = false; // Flag ป้องกันคลิปเล่นซ้ำ
+    const videoId = "{{ info.youtube_id }}"; // ดึง ID จาก Flask
     /* YouTube เรียก callback นี้เมื่อ API โหลดเสร็จ */
     function onYouTubeIframeAPIReady() {
         player = new YT.Player('player', {
@@ -622,6 +624,15 @@
                 if (data.is_navigating === true && data.current_progress !== undefined) {
                     setProgress(data.current_progress);
                 }
+                if (data.current_progress >= 80 && !isVideoStarted && player && player.playVideo) {
+                console.log("ใกล้ถึงแล้ว! เริ่มเล่นวิดีโอแนะนำห้อง...");
+                const overlay = document.getElementById('overlay');
+                if (overlay) overlay.classList.add('hidden'); // ซ่อน overlay อัตโนมัติ
+                
+                player.unMute(); // เลิกปิดเสียงเพื่อให้ได้ยินเสียงแนะนำ
+                player.playVideo();
+                isVideoStarted = true;
+                }
 
                 if (data.is_navigating === false &&
                     String(curNode) === String(TARGET_NODE)) {
@@ -653,6 +664,15 @@
 
             simPct += 1;
             setProgress(simPct);
+
+            if (simPct >= 75 && !isVideoStarted && player && player.playVideo) {
+            const overlay = document.getElementById('overlay');
+            if (overlay) overlay.classList.add('hidden');
+            
+            player.unMute();
+            player.playVideo();
+            isVideoStarted = true;
+            }
 
             if (simPct < 30) {
                 updateStatus('กำลังออกจากจุดเริ่มต้น...', 'cyan');
