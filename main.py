@@ -6,7 +6,8 @@ import requests
 ROBOT_IP = "172.83.9.204"
 
 # เพิ่มตัวแปรเก็บตำแหน่งล่าสุดในฝั่ง Windows ด้วย (ถ้าต้องการ)
-last_known_node = 1 
+last_known_node = 1
+ 
 
 # ข้อมูลรายละเอียดแต่ละห้อง
 ROOM_DATA = {
@@ -107,47 +108,56 @@ ROOM_TO_NODE = {
 }
 
 app = Flask(__name__)
-# --- [ROS PREPARATION / MOCK DATA] ---
 
-# --- [PAGES ROUTES] ---
+@app.route('/idle')
+def idle():
+    return render_template('idle.html')
 
 @app.route('/')
 def index():
     return render_template('index.html')
 
+
 @app.route('/room')
-def room():
-    return render_template('room.html')
+def room_selection():
+    return render_template('room.html', rooms=ROOM_DATA)
+
 
 @app.route('/view_map')
 def view_map():
-    room_id = request.args.get('room', '...')
-    return render_template('view_map.html', room_id=room_id)
+    global last_known_node
+    room_id = request.args.get('room', '...').upper()
 
-# app.py — แก้ route /arrived ให้ส่ง room_info ไปด้วย
+    start_room_name = "HOME"
+    for r_name, n_id in ROOM_TO_NODE.items():
+        if n_id == last_known_node:
+            start_room_name = r_name
+            break
+    return render_template('view_map.html', room_id=room_id, start_room=start_room_name)
+
+
 @app.route('/arrived')
 def arrived():
-    room_id = request.args.get('room', '...')
+    room_id = request.args.get('room', 'HOME')
+
     info = ROOM_DATA.get(room_id.upper(), {})
+
     return render_template('arrived.html', room_id=room_id, room_info=info)
 
-# แก้ไขฟังก์ชันนำทาง: รวม navigatng และ navigate เข้าด้วยกันเพื่อลดความซับซ้อน
 @app.route('/navigate/<room_id>')
 def navigate_to_room(room_id):
-    # ✅ เพิ่ม .upper() ก่อน lookup
-    info = ROOM_DATA.get(room_id.upper(), {
-        "subjects": "ไม่ระบุวิชาเรียน",
-        "desc": "ห้องปฏิบัติการ",
-        "dept": "CCE/EL",
-        "youtube_id": None,
-        "dub": None
-    })
+    global last_known_node 
+    
+    rid = room_id.upper()
+    info = ROOM_DATA.get(rid, {})
 
+    start_room_name = "HOME"
+    for r_name, n_id in ROOM_TO_NODE.items():
+        if n_id == last_known_node:
+            start_room_name = r_name
+            break
+    return render_template('navigating.html', room_id=rid, room_info=info, start_room=start_room_name)
 
-    return render_template('navigating.html',
-                           room_id=room_id,  # ← ส่งตามเดิม ไม่ต้อง upper
-                           info=info)
-# --- [API ROUTES] ---
 
 @app.route('/api/move_to/<room_id>')
 def api_move_to(room_id):
@@ -161,8 +171,6 @@ def api_move_to(room_id):
     def call_robot():
         global last_known_node
         try:
-            # ถาม Ubuntu ก่อนว่าตอนนี้อยู่ที่ไหน
-            # ป้องกันกรณี robot_server.py restart แล้ว last_known_node ไม่ตรง
             try:
                 status_res = requests.get(f"http://{ROBOT_IP}:5000/status", timeout=2)
                 if status_res.status_code == 200:
@@ -172,14 +180,12 @@ def api_move_to(room_id):
             except:
                 print(f"[SYNC] Cannot reach robot, using last_known_node: {last_known_node}")
 
-            # ส่งคำสั่งเดิน
             res = requests.post(
                 f"http://{ROBOT_IP}:5000/command",
                 json={"start": last_known_node, "target": node_id},
                 timeout=5
             )
             if res.status_code == 200:
-                # last_known_node = node_id
                 print(f"[ROBOT] Moving start={last_known_node} target={node_id}")
         except Exception as e:
             print(f"[ROBOT] Connection Error: {e}")
@@ -192,8 +198,7 @@ def stop_robot():
     try:
         requests.get(f"http://{ROBOT_IP}:5000/stop", timeout=2)
     except:
-        pass  # ถ้าหุ่นไม่ตอบก็ไม่เป็นไร
-    # return 200 เสมอ ไม่ว่าหุ่นจะออนไลน์หรือไม่
+        pass  
     return jsonify({"status": "ok"})
 
 @app.route('/api/status')
@@ -202,27 +207,24 @@ def api_status():
         res = requests.get(f"http://{ROBOT_IP}:5000/status", timeout=3)
         return jsonify(res.json())
     except:
-        # ส่ง robot_online: False บอก JS ว่าเชื่อมหุ่นไม่ได้
         return jsonify({
             "is_navigating": False,
             "current_location": 1,
-            "robot_online": False,  # ← key ใหม่
+            "robot_online": False,
             "x": 0, "y": 0
         }), 200
         
-# เพิ่มลงใน app.py บน Windows
 @app.route('/api/reset-home', methods=['POST'])
 def proxy_reset_home():
+    global last_known_node
     try:
-        # ส่งคำสั่งต่อไปยัง Ubuntu
         response = requests.post(f"http://{ROBOT_IP}:5000/command/reset-home", timeout=5)
         last_known_node = 1 
         print("[RESET] Windows state set to Node 1")
         return response.json()
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
-    
-# app.py — เพิ่มตอนท้าย if __name__ == '__main__'
+
 if __name__ == '__main__':
     print(f"[INFO] ROBOT_IP = {ROBOT_IP}")
     print(f"[INFO] Flask starting on http://0.0.0.0:5000")

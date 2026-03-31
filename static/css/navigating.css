@@ -1,0 +1,344 @@
+:root {
+    --cyan: #00E5FF;
+    --gold: #FFCC00;
+    --blue: #004A99;
+    --red: #FF5252;
+    --dark: #0D1526;
+    --border: rgba(0, 229, 255, 0.15);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background: radial-gradient(circle at center, #0a1326 0%, #000000 100%);
+    color: #fff;
+    font-family: 'Exo 2', sans-serif;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* Background Deco */
+.grid {
+    position: fixed;
+    inset: 0;
+    background-image:
+        linear-gradient(var(--border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 50px 50px;
+    opacity: 0.15;
+    z-index: 1;
+    box-shadow: inset 0 0 150px rgba(0, 0, 0, 0.9);
+    /* เงาดำขอบจอ */
+    pointer-events: none;
+}
+
+.scan {
+    position: fixed;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+    background: linear-gradient(to bottom, transparent, rgba(0, 229, 255, 0.05) 50%, transparent);
+    background-size: 100% 4px;
+    animation: scanline 8s linear infinite;
+}
+
+.br {
+    position: fixed;
+    width: 40px;
+    height: 40px;
+    border: 2px solid transparent;
+    z-index: 5;
+    pointer-events: none;
+}
+
+.br.tl {
+    top: 20px;
+    left: 20px;
+    border-top-color: var(--cyan);
+    border-left-color: var(--cyan);
+}
+
+.br.br2 {
+    bottom: 20px;
+    right: 20px;
+    border-bottom-color: var(--cyan);
+    border-right-color: var(--cyan);
+}
+
+.page {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    padding: 20px;
+    gap: 15px;
+}
+
+/* Header */
+.header {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-shrink: 0;
+    margin-left: 30px;
+}
+
+.dest-room {
+    font-family: 'Orbitron';
+    font-size: 1.8rem;
+    color: var(--gold);
+}
+
+.dest-label {
+    margin-left: 10px;
+}
+
+.progress-wrap {
+    flex: 1;
+}
+
+.progress-track {
+    height: 8px;
+    /* ปรับให้หนาขึ้นเล็กน้อยเพื่อให้เห็นสีชัดขึ้น (จากเดิม 4px) */
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    border: 2px solid var(--border);
+    /* ปรับขอบบางลงให้ดูทันสมัย */
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    width: 0%;
+    /* ไล่สีจากฟ้า (ต้นทาง) ไปเหลืองทอง (ปลายทาง) */
+    background: linear-gradient(90deg, var(--cyan) 0%, var(--gold) 100%);
+    transition: width 0.5s ease-out;
+    /* ให้แสงเงาเรืองแสงเป็นสีเหลืองทองตามปลายแถบ */
+    box-shadow: 0 0 12px var(--gold);
+}
+
+.progress-labels {
+    margin-bottom: 10px;
+}
+
+/* Main Visual Area - ขยายให้กว้างยาว */
+.visual-container {
+    flex: 1;
+    background: rgba(13, 21, 38, 0.6);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.current-location-tag {
+    position: absolute;
+    top: 20px;
+    background: rgba(0, 0, 0, 0.8);
+    padding: 6px 20px;
+    border-radius: 30px;
+    border: 1px solid var(--cyan);
+    color: var(--cyan);
+    font-size: 0.85rem;
+    font-family: 'Orbitron';
+}
+
+.route-horizontal {
+    display: flex;
+    align-items: center;
+    width: 92%;
+    position: relative;
+}
+
+/* เพิ่มความกว้าง */
+.route-line {
+    flex: 1;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    margin: 0 15px;
+    position: relative;
+}
+
+.line-fill {
+    position: absolute;
+    left: 0;
+    height: 100%;
+    width: 0%;
+    background: var(--cyan);
+    transition: width 0.5s;
+}
+
+.robot-marker {
+    position: absolute;
+    top: 50%;
+    left: 0%;
+    transform: translate(-50%, -50%);
+    width: 40px;
+    height: 40px;
+    background: var(--gold);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #000;
+    box-shadow: 0 0 15px var(--gold);
+    z-index: 10;
+    transition: left 0.5s;
+}
+
+.marker-val {
+    position: absolute;
+    top: -25px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    color: var(--gold);
+}
+
+.node-icon {
+    width: 45px;
+    height: 45px;
+    background: #000;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--cyan);
+}
+
+.node.end .node-icon {
+    border-color: var(--gold);
+    color: var(--gold);
+}
+
+.node-name {
+    font-size: 0.75rem;
+    margin-top: 5px;
+    color: #ccc;
+}
+
+/* Mini Info Card */
+.info-card {
+    background: rgba(255, 255, 255, 0.03);
+    padding: 25px 15px;
+    border-radius: 10px;
+    display: flex;
+    gap: 10px;
+    font-size: 1rem;
+    border-left: 5px solid var(--gold);
+}
+
+/* Small Buttons & Footer */
+.footer-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    padding: 10px 0;
+}
+
+.status-msg {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+
+    background: rgba(0, 229, 255, 0.05);
+    border: 1px solid rgba(0, 229, 255, 0.15);
+    border-radius: 50px;
+    padding: 8px 24px;
+
+    margin: 0 auto 15px auto;
+    width: fit-content;
+
+    font-size: 1rem;
+    color: var(--cyan);
+    font-weight: 600;
+    backdrop-filter: blur(4px);
+}
+
+.live-dot {
+    width: 10px;
+    height: 10px;
+    background: #00FF88;
+    border-radius: 50%;
+    box-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+    animation: blink 1.5s infinite;
+}
+
+@keyframes pulse {
+    50% {
+        opacity: 0.3;
+    }
+}
+
+@keyframes scanline {
+    from {
+        transform: translateY(-100%);
+    }
+
+    to {
+        transform: translateY(100%);
+    }
+}
+
+.btn-group {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    width: 100%;
+}
+
+.btn-nav {
+    padding: 12px 30px;
+    min-width: 140px;
+    min-height: 50px;
+    border-radius: 50px;
+
+    font-size: 1rem;
+    font-weight: 700;
+    border: 1px solid var(--border);
+    cursor: pointer;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+
+    transition: all 0.2s ease;
+    color: #fff;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.btn-nav:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 229, 255, 0.2);
+    border-color: var(--cyan);
+}
+
+.btn-map {
+    background: var(--blue);
+    box-shadow: 0 4px 15px rgba(0, 74, 153, 0.3);
+}
+
+.btn-cancel {
+    background: rgba(255, 82, 82, 0.15);
+    border-color: var(--red);
+    color: var(--red);
+}
+
+.btn-sim {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--border);
+}
+
+.btn-nav:active {
+    transform: scale(0.95);
+}

@@ -1,0 +1,197 @@
+/* ── CSS ภายในไฟล์ ── */
+:root {
+    --cyan: #00E5FF;
+    --gold: #FFCC00;
+    --green: #00FF88;
+    --border: rgba(0, 229, 255, 0.2);
+    --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    width: 100%;
+    height: 100vh;
+    background: radial-gradient(circle at center, #0a1326 0%, #000000 100%) !important;
+    color: #fff;
+    font-family: 'Exo 2', sans-serif;
+    overflow: hidden;
+}
+
+#canvas {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+}
+
+.grid {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background-image: linear-gradient(rgba(0, 229, 255, 0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 229, 255, 0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+}
+
+.page {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    height: 100%;
+    padding: 20px;
+}
+
+.header {
+    text-align: center;
+    margin-top: 10px;
+}
+
+.header span {
+    color: var(--cyan);
+    font-size: 0.9rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+.header h1 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 2rem;
+    color: var(--green);
+    text-shadow: 0 0 15px rgba(0, 255, 136, 0.5);
+}
+
+/* ── คอนเทนเนอร์แผนที่ (เลื่อนได้) ── */
+.map-frame {
+    flex: 1;
+    width: 100%;
+    max-width: 500px;
+    margin: 15px 0;
+    border-radius: 12px;
+    border: 3px solid var(--border);
+    background: #fff;
+    /* พื้นหลังสีขาวให้เนียนกับรูปแมพ */
+    box-shadow: 0 0 30px rgba(0, 229, 255, 0.15);
+
+    /* อนุญาตให้เลื่อนขึ้นลงได้ */
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: var(--cyan) #000;
+}
+
+.map-frame::-webkit-scrollbar {
+    width: 6px;
+}
+
+.map-frame::-webkit-scrollbar-track {
+    background: #000;
+}
+
+.map-frame::-webkit-scrollbar-thumb {
+    background: var(--cyan);
+    border-radius: 10px;
+}
+
+.map-wrapper {
+    position: relative;
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.map-image {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+/* เลเยอร์วาดเส้น */
+.route-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 10;
+}
+
+.path-line {
+    stroke: var(--cyan);
+    stroke-width: 4px;
+    fill: none;
+    stroke-dasharray: 12, 12;
+    filter: drop-shadow(0 0 8px var(--cyan));
+    animation: dash 1s linear infinite;
+}
+
+.node-point {
+    filter: drop-shadow(0 0 8px rgba(0, 0, 0, 0.8));
+}
+
+.start-point {
+    fill: var(--green);
+    filter: drop-shadow(0 0 10px var(--green));
+}
+
+.dest-point {
+    fill: var(--gold);
+    filter: drop-shadow(0 0 10px var(--gold));
+    animation: pulseNode 1.5s infinite alternate;
+}
+
+.node-text {
+    fill: #000;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 16px;
+    font-weight: 900;
+    text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff;
+}
+
+@keyframes dash {
+    to {
+        stroke-dashoffset: -10;
+    }
+}
+
+@keyframes pulseNode {
+    from {
+        r: 6;
+    }
+
+    to {
+        r: 10;
+    }
+}
+
+.btn {
+    padding: 14px 30px;
+    border-radius: 50px;
+    font-family: 'Exo 2', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(0, 229, 255, 0.1);
+    border: 1px solid var(--cyan);
+    color: var(--cyan);
+    text-decoration: none;
+    transition: 0.2s;
+}
+
+.btn:hover {
+    background: rgba(0, 229, 255, 0.2);
+    box-shadow: 0 0 15px rgba(0, 229, 255, 0.4);
+}
