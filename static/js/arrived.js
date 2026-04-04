@@ -122,9 +122,6 @@ window.onload = () => {
     const roomIdDisplay = typeof CURRENT_ROOM_ID !== 'undefined' ? CURRENT_ROOM_ID : 'Unknown';
     console.log("Welcome! Current Location:", roomIdDisplay);
  
-    setTimeout(() => {
-        speakDetails();
-    }, 500); 
 
     const iframe = document.querySelector('iframe');
     if (iframe) {

@@ -2,13 +2,10 @@ import threading
 from flask import Flask, render_template, request, jsonify
 import requests
 
-# --- [CONFIG & DATA] ---
 ROBOT_IP = "172.83.9.204"
 
-# เพิ่มตัวแปรเก็บตำแหน่งล่าสุดในฝั่ง Windows ด้วย (ถ้าต้องการ)
 last_known_node = 1
  
-
 # ข้อมูลรายละเอียดแต่ละห้อง
 ROOM_DATA = {
     "1301": {
@@ -92,10 +89,10 @@ ROOM_DATA = {
     }
 }
 
-# ใส่ไว้ใน app.py (Windows)
+
 ROOM_TO_NODE = {
     "HOME": 1,
-    "1301": 2,  # ห้อง 1301 อยู่ที่จุดที่ 2
+    "1301": 2,
     "1302": 3,
     "1303A": 4,
     "1303B": 5,
@@ -218,11 +215,17 @@ def api_status():
 def proxy_reset_home():
     global last_known_node
     try:
-        response = requests.post(f"http://{ROBOT_IP}:5000/command/reset-home", timeout=5)
+        response = requests.post(
+            f"http://{ROBOT_IP}:5000/command/reset-home", 
+            json={"set_node": 1}, 
+            timeout=5
+        )
+        
         last_known_node = 1 
-        print("[RESET] Windows state set to Node 1")
         return response.json()
+        
     except Exception as e:
+        print(f"[RESET] Error connecting to robot: {e}")
         return jsonify({"status": "error", "message": str(e)}), 500
 
 if __name__ == '__main__':

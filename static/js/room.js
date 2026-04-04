@@ -78,3 +78,8 @@ function confirmResetHome() {
         }
     });
 }
+function toggleFS() {
+    if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(()=>{});
+    else document.exitFullscreen();
+}
+
