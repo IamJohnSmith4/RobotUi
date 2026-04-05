@@ -1,3 +1,53 @@
+// ── 1. Particle Background (ระบบดาวระยิบระยับ) ──
+(function () {
+    const canvas = document.getElementById('canvas');
+    if (!canvas) return; // ป้องกัน Error ถ้าหา Canvas ไม่เจอ
+    const ctx = canvas.getContext('2d');
+    let w, h, particles = [];
+
+    // ฟังก์ชันเริ่มต้นสร้างเม็ดดาว
+    function init() {
+        w = canvas.width = window.innerWidth;
+        h = canvas.height = window.innerHeight;
+        particles = [];
+        for (let i = 0; i < 100; i++) {
+            particles.push({
+                x: Math.random() * w,
+                y: Math.random() * h,
+                size: Math.random() * 1.5 + 0.5,
+                speed: Math.random() * 0.4 + 0.1,
+                opacity: Math.random()
+            });
+        }
+    }
+
+    // วาดและขยับดาว
+    function animate() {
+        ctx.clearRect(0, 0, w, h);
+        particles.forEach(p => {
+            ctx.fillStyle = `rgba(0, 229, 255, ${p.opacity})`; // สีฟ้า Cyan ตาม Theme
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.fill();
+
+            // ขยับดาวขึ้นด้านบน
+            p.y -= p.speed;
+            if (p.y < 0) p.y = h;
+
+            // เอฟเฟกต์กะพริบ
+            p.opacity += (Math.random() - 0.5) * 0.05;
+            if (p.opacity < 0.1) p.opacity = 0.1;
+            if (p.opacity > 0.8) p.opacity = 0.8;
+        });
+        requestAnimationFrame(animate);
+    }
+
+    window.addEventListener('resize', init);
+    init();
+    animate();
+})();
+
+// ── 2. ระบบเลือกห้อง (Room Selection) ──
 function selectRoom(cardEl, roomId) {
     const allCards   = document.querySelectorAll('.scard');
     const statusBar  = document.getElementById('status-bar');
@@ -9,7 +59,7 @@ function selectRoom(cardEl, roomId) {
     cardEl.classList.remove('dimmed');
     cardEl.classList.add('selected');
 
-    const targetID = roomId.toUpperCase(); // เช่น "1301" หรือ "1303A"
+    const targetID = roomId.toUpperCase();
 
     if(statusBar) {
         statusBar.style.borderColor = 'var(--gold)';
@@ -17,18 +67,15 @@ function selectRoom(cardEl, roomId) {
         statusText.innerHTML = `กำลังเตรียมนำทางไปห้อง <strong>${targetID}</strong>...`;
     }
 
-    // 2. ส่งไปที่ API ของ main.py (Windows Flask)
-    // หมายเหตุ: ใช้ URL '/api/move_to/' ตามที่กำหนดใน main.py
+    // 2. ส่งคำสั่งไปที่หุ่นยนต์
     fetch('/api/move_to/' + targetID)
         .then(res => {
             if (!res.ok) throw new Error('HTTP ' + res.status);
             return res.json();
         })
         .then(data => {
-            // เช็คสถานะ "moving" ตามที่ Python ส่งกลับมา
             if (data.status === 'moving') {
                 setTimeout(() => {
-                    // ย้ายหน้าไปที่ /navigate/<room_id>
                     window.location.href = '/navigate/' + targetID;
                 }, 800);
             } else {
@@ -48,7 +95,7 @@ function selectRoom(cardEl, roomId) {
         });
 }
 
-// ฟังก์ชันสำหรับปุ่ม Reset Home (เรียกใช้ Proxy Reset ใน main.py)
+// ── 3. ปุ่ม Reset Home ──
 function confirmResetHome() {
     Swal.fire({
         title: 'รีเซ็ตระบบกลับจุดเริ่มต้น?',
@@ -61,7 +108,6 @@ function confirmResetHome() {
         color: '#fff'
     }).then((result) => {
         if (result.isConfirmed) {
-            // เรียกไปที่ @app.route('/api/reset-home') ใน main.py
             fetch('/api/reset-home', { method: 'POST' })
                 .then(res => res.json())
                 .then(data => {
@@ -78,8 +124,12 @@ function confirmResetHome() {
         }
     });
 }
-function toggleFS() {
-    if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(()=>{});
-    else document.exitFullscreen();
-}
 
+// ── 4. ระบบเต็มจอ (Fullscreen) ──
+function toggleFS() {
+    if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(()=>{});
+    } else {
+        document.exitFullscreen();
+    }
+}
